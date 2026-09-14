@@ -10,6 +10,7 @@ use App\Services\Shopify\ShopifyGraphQLClient;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Shopify-managed recurring billing (Shopify handles the actual card
@@ -32,7 +33,7 @@ class BillingController extends Controller
 
         $client = new ShopifyGraphQLClient($shop);
 
-        $response = $client->query(<<<'GQL'
+        $body = $client->query(<<<'GQL'
             mutation appSubscriptionCreate($name: String!, $returnUrl: URL!, $lineItems: [AppSubscriptionLineItemInput!]!, $test: Boolean!) {
                 appSubscriptionCreate(name: $name, returnUrl: $returnUrl, lineItems: $lineItems, test: $test) {
                     userErrors { field message }
@@ -43,7 +44,7 @@ class BillingController extends Controller
             GQL, [
             'name' => "SendMyEbook — {$plan->name}",
             'returnUrl' => route('billing.callback', ['shop' => $shop->shop_domain]),
-            'test' => ! app()->isProduction(),
+            'test' => config('shopify.billing_test_mode'),
             'lineItems' => [[
                 'plan' => [
                     'appRecurringPricingDetails' => [
@@ -52,10 +53,24 @@ class BillingController extends Controller
                     ],
                 ],
             ]],
-        ])->json('data.appSubscriptionCreate');
+        ])->json();
+
+        if (! empty($body['errors'])) {
+            Log::error('appSubscriptionCreate GraphQL error', ['shop' => $shop->shop_domain, 'errors' => $body['errors']]);
+
+            return response()->json(['errors' => $body['errors']], 502);
+        }
+
+        $response = $body['data']['appSubscriptionCreate'] ?? null;
 
         if (! empty($response['userErrors'])) {
             return response()->json(['errors' => $response['userErrors']], 422);
+        }
+
+        if (empty($response['appSubscription']['id']) || empty($response['confirmationUrl'])) {
+            Log::error('appSubscriptionCreate returned no subscription', ['shop' => $shop->shop_domain, 'response' => $response]);
+
+            return response()->json(['errors' => ['Shopify did not return a subscription for this store.']], 502);
         }
 
         Subscription::query()->create([

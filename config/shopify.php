@@ -46,4 +46,22 @@ return [
         'refunds/create' => '/api/webhooks/refunds-create',
         'app/uninstalled' => '/api/webhooks/app-uninstalled',
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Billing
+    |--------------------------------------------------------------------------
+    |
+    | Whether appSubscriptionCreate charges are marked `test: true` (no real
+    | money moves; required for development stores, which silently refuse
+    | non-test charges). This is about the SHOPIFY STORE being tested
+    | against, not this Laravel app's own environment — our app runs with
+    | APP_ENV=production on Railway even while every install so far has
+    | been a development store, so this must not be tied to
+    | app()->isProduction(). Flip to false once the app is actually
+    | listed and being installed on real merchant stores.
+    |
+    */
+
+    'billing_test_mode' => (bool) env('SHOPIFY_BILLING_TEST_MODE', true),
 ];
