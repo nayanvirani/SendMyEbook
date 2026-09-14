@@ -80,6 +80,35 @@ class ShopifyAuthService
     }
 
     /**
+     * Token Exchange: trades the App Bridge session token (a short-lived
+     * ID token) for a real offline Admin API access token, without any
+     * redirect or iframe navigation. This is what `use_legacy_install_flow
+     * = false` in shopify.app.toml expects the app to do itself on first
+     * contact with a shop — Shopify's own "managed installation" grants
+     * scopes and embeds the app before we ever see a request, so there is
+     * no authorization code to exchange, only this session token.
+     *
+     * @return array{access_token: string, scope: string}
+     */
+    public function exchangeSessionTokenForOfflineToken(string $shop, string $sessionToken): array
+    {
+        $response = Http::asJson()->post("https://{$shop}/admin/oauth/access_token", [
+            'client_id' => config('shopify.api_key'),
+            'client_secret' => config('shopify.api_secret'),
+            'grant_type' => 'urn:ietf:params:oauth:grant-type:token-exchange',
+            'subject_token' => $sessionToken,
+            'subject_token_type' => 'urn:ietf:params:oauth:token-type:id_token',
+            'requested_token_type' => 'urn:ietf:params:oauth:token-type:offline_access_token',
+        ]);
+
+        if ($response->failed()) {
+            throw new RuntimeException('Shopify token exchange failed: '.$response->body());
+        }
+
+        return $response->json();
+    }
+
+    /**
      * Verify the X-Shopify-Hmac-Sha256 header on an incoming webhook request.
      */
     public function verifyWebhookHmac(string $rawBody, ?string $header): bool
