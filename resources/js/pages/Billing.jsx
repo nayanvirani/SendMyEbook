@@ -8,7 +8,7 @@ export default function Billing() {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        api.get('/billing/plans').then(setPlans);
+        api.get('/billing/plans').then(setPlans).catch(() => setPlans([]));
     }, []);
 
     const handleSubscribe = async (plan) => {

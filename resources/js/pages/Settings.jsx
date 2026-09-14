@@ -8,7 +8,7 @@ export default function Settings() {
     const [saved, setSaved] = useState(false);
 
     useEffect(() => {
-        api.get('/settings').then(setForm);
+        api.get('/settings').then(setForm).catch(() => {});
     }, []);
 
     const field = (key) => (value) => setForm((f) => ({ ...f, [key]: value }));

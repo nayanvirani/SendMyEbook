@@ -6,7 +6,7 @@ export default function Orders() {
     const [orders, setOrders] = useState(null);
 
     useEffect(() => {
-        api.get('/orders').then((res) => setOrders(res.data));
+        api.get('/orders').then((res) => setOrders(res.data)).catch(() => setOrders([]));
     }, []);
 
     return (

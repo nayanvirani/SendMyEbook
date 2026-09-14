@@ -6,7 +6,7 @@ export default function Downloads() {
     const [downloads, setDownloads] = useState(null);
 
     useEffect(() => {
-        api.get('/downloads').then((res) => setDownloads(res.data));
+        api.get('/downloads').then((res) => setDownloads(res.data)).catch(() => setDownloads([]));
     }, []);
 
     return (

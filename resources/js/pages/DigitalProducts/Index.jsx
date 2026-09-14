@@ -8,7 +8,7 @@ export default function DigitalProductsIndex() {
     const [products, setProducts] = useState(null);
 
     useEffect(() => {
-        api.get('/digital-products').then((res) => setProducts(res.data));
+        api.get('/digital-products').then((res) => setProducts(res.data)).catch(() => setProducts([]));
     }, []);
 
     const { selectedResources, allResourcesSelected, handleSelectionChange } = useIndexResourceState(products || []);

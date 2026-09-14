@@ -53,7 +53,7 @@ export default function DigitalProductForm() {
                 revoke_on_refund: product.revoke_on_refund,
             });
             setFiles(product.files || []);
-        });
+        }).catch(() => setError('Could not load this digital product.'));
     }, [id, isEditing]);
 
     const field = (key) => (value) => setForm((f) => ({ ...f, [key]: value }));

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Page, Layout, Card, Text, BlockStack, InlineGrid, SkeletonBodyText } from '@shopify/polaris';
+import { Page, Layout, Card, Text, BlockStack, InlineGrid, SkeletonBodyText, Banner } from '@shopify/polaris';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api';
 
@@ -18,9 +18,13 @@ export default function Dashboard() {
     const navigate = useNavigate();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
-        api.get('/dashboard').then(setData).finally(() => setLoading(false));
+        api.get('/dashboard')
+            .then(setData)
+            .catch(() => setError('Could not load the dashboard. Try refreshing the page.'))
+            .finally(() => setLoading(false));
     }, []);
 
     return (
@@ -30,9 +34,10 @@ export default function Dashboard() {
         >
             <Layout>
                 <Layout.Section>
+                    {error && <Banner tone="critical">{error}</Banner>}
                     {loading ? (
                         <Card><SkeletonBodyText lines={4} /></Card>
-                    ) : (
+                    ) : !data ? null : (
                         <BlockStack gap="400">
                             <InlineGrid columns={{ xs: 1, sm: 2, md: 4 }} gap="400">
                                 <StatCard label="Digital Products" value={data.total_digital_products} />

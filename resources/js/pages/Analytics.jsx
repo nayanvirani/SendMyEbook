@@ -6,7 +6,7 @@ export default function Analytics() {
     const [data, setData] = useState(null);
 
     useEffect(() => {
-        api.get('/analytics').then(setData);
+        api.get('/analytics').then(setData).catch(() => {});
     }, []);
 
     if (!data) {
