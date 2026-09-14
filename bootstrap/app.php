@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureEmbeddedResponseHeaders;
+use App\Http\Middleware\EnsureIsSuperAdmin;
 use App\Http\Middleware\VerifyShopifySessionToken;
 use App\Http\Middleware\VerifyShopifyWebhook;
 use Illuminate\Foundation\Application;
@@ -26,7 +27,14 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'shopify.webhook' => VerifyShopifyWebhook::class,
             'shopify.session' => VerifyShopifySessionToken::class,
+            'super_admin' => EnsureIsSuperAdmin::class,
         ]);
+
+        // The only session-cookie login in this app is the platform-owner
+        // admin panel (merchants authenticate via Shopify, never via this
+        // guard) — so an unauthenticated hit on an `auth`-protected route
+        // always means "send them to the admin login".
+        $middleware->redirectGuestsTo('/admin/login');
 
         // The embedded app is rendered inside Shopify Admin's iframe, so the
         // default clickjacking protection has to be relaxed for our own
