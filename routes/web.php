@@ -23,6 +23,11 @@ Route::get('/billing/callback', [BillingController::class, 'callback'])->name('b
 Route::get('/downloads/{token}', [DownloadAccessController::class, 'show'])->name('customer.downloads.show');
 Route::get('/downloads/{token}/files/{file}', [DownloadAccessController::class, 'download'])->name('customer.downloads.file');
 
+// Legal pages required by the Shopify Partner Dashboard app listing.
+Route::get('/privacy', function () {
+    return view('legal.privacy', ['lastUpdated' => now()->format('F j, Y')]);
+})->name('legal.privacy');
+
 /*
 |--------------------------------------------------------------------------
 | Platform Owner Admin Panel
@@ -53,5 +58,5 @@ Route::prefix('admin')->name('admin.')->group(function () {
 // Embedded Shopify Admin app shell. Anything not matched above renders the
 // same shell so the client-side router can take over on a hard refresh.
 Route::get('/{any?}', EmbeddedAppController::class)
-    ->where('any', '^(?!api|auth|admin|downloads|webhooks).*$')
+    ->where('any', '^(?!api|auth|admin|downloads|webhooks|privacy).*$')
     ->name('embedded.app');
