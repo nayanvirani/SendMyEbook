@@ -12,6 +12,7 @@ import {
     Text,
     DropZone,
     Banner,
+    Thumbnail,
 } from '@shopify/polaris';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../../api';
@@ -21,6 +22,7 @@ const emptyForm = {
     shopify_product_id: '',
     shopify_product_title: '',
     shopify_variant_id: '',
+    shopify_variant_title: '',
     status: 'active',
     max_downloads: '',
     expiration_value: '',
@@ -28,12 +30,22 @@ const emptyForm = {
     revoke_on_refund: true,
 };
 
+// Shopify's resource picker returns GraphQL IDs like
+// "gid://shopify/Product/123" — the rest of this app works in the plain
+// numeric IDs Shopify's REST-shaped webhooks use, so unwrap them here.
+function numericId(gid) {
+    if (!gid) return '';
+    return gid.split('/').pop();
+}
+
 export default function DigitalProductForm() {
     const { id } = useParams();
     const navigate = useNavigate();
     const isEditing = Boolean(id);
 
     const [form, setForm] = useState(emptyForm);
+    const [productImage, setProductImage] = useState(null);
+    const [variantOptions, setVariantOptions] = useState([]);
     const [files, setFiles] = useState([]);
     const [saving, setSaving] = useState(false);
     const [uploading, setUploading] = useState(false);
@@ -46,6 +58,7 @@ export default function DigitalProductForm() {
                 shopify_product_id: product.shopify_product_id,
                 shopify_product_title: product.shopify_product_title || '',
                 shopify_variant_id: product.shopify_variant_id || '',
+                shopify_variant_title: product.shopify_variant_title || '',
                 status: product.status,
                 max_downloads: product.max_downloads ?? '',
                 expiration_value: product.expiration_value ?? '',
@@ -58,6 +71,42 @@ export default function DigitalProductForm() {
 
     const field = (key) => (value) => setForm((f) => ({ ...f, [key]: value }));
 
+    const pickProduct = useCallback(async () => {
+        if (!window.shopify?.resourcePicker) {
+            setError('The product picker is only available inside Shopify admin.');
+            return;
+        }
+
+        const selected = await window.shopify.resourcePicker({ type: 'product', multiple: false });
+        const product = selected?.[0];
+        if (!product) return;
+
+        const variants = product.variants || [];
+
+        setForm((f) => ({
+            ...f,
+            shopify_product_id: numericId(product.id),
+            shopify_product_title: product.title,
+            shopify_variant_id: '',
+            shopify_variant_title: '',
+        }));
+        setProductImage(product.images?.[0]?.originalSrc || product.images?.[0]?.url || null);
+        setVariantOptions(
+            variants.length > 1
+                ? variants.map((v) => ({ label: v.title, value: numericId(v.id) }))
+                : []
+        );
+    }, []);
+
+    const selectVariant = useCallback((variantId) => {
+        const variant = variantOptions.find((v) => v.value === variantId);
+        setForm((f) => ({
+            ...f,
+            shopify_variant_id: variantId,
+            shopify_variant_title: variant?.label || '',
+        }));
+    }, [variantOptions]);
+
     const handleSave = useCallback(async () => {
         setSaving(true);
         setError(null);
@@ -67,6 +116,7 @@ export default function DigitalProductForm() {
                 max_downloads: form.max_downloads === '' ? null : Number(form.max_downloads),
                 expiration_value: form.expiration_value === '' ? null : Number(form.expiration_value),
                 shopify_variant_id: form.shopify_variant_id || null,
+                shopify_variant_title: form.shopify_variant_title || null,
             };
 
             if (isEditing) {
@@ -117,35 +167,38 @@ export default function DigitalProductForm() {
                 {error && <Banner tone="critical" onDismiss={() => setError(null)}>{error}</Banner>}
 
                 <Card>
-                    <FormLayout>
+                    <BlockStack gap="300">
                         <Text as="h2" variant="headingMd">Shopify product</Text>
-                        <TextField
-                            label="Shopify Product ID"
-                            helpText="The numeric product ID from Shopify Admin (a live product picker is a good next iteration)."
-                            value={form.shopify_product_id}
-                            onChange={field('shopify_product_id')}
-                            autoComplete="off"
-                        />
-                        <TextField
-                            label="Product title (for display only)"
-                            value={form.shopify_product_title}
-                            onChange={field('shopify_product_title')}
-                            autoComplete="off"
-                        />
-                        <TextField
-                            label="Variant ID (optional)"
-                            helpText="Leave blank to map the whole product."
-                            value={form.shopify_variant_id}
-                            onChange={field('shopify_variant_id')}
-                            autoComplete="off"
-                        />
+
+                        {form.shopify_product_title ? (
+                            <InlineStack gap="300" blockAlign="center">
+                                {productImage && <Thumbnail source={productImage} alt={form.shopify_product_title} size="small" />}
+                                <BlockStack gap="050">
+                                    <Text as="span" fontWeight="medium">{form.shopify_product_title}</Text>
+                                    <Text as="span" tone="subdued">ID {form.shopify_product_id}</Text>
+                                </BlockStack>
+                                <Button onClick={pickProduct}>Change product</Button>
+                            </InlineStack>
+                        ) : (
+                            <Button onClick={pickProduct}>Select a Shopify product</Button>
+                        )}
+
+                        {variantOptions.length > 0 && (
+                            <Select
+                                label="Variant"
+                                options={[{ label: 'All variants (map the whole product)', value: '' }, ...variantOptions]}
+                                value={form.shopify_variant_id}
+                                onChange={selectVariant}
+                            />
+                        )}
+
                         <Select
                             label="Status"
                             options={[{ label: 'Active', value: 'active' }, { label: 'Inactive', value: 'inactive' }]}
                             value={form.status}
                             onChange={field('status')}
                         />
-                    </FormLayout>
+                    </BlockStack>
                 </Card>
 
                 <Card>
