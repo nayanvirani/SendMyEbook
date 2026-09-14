@@ -1,0 +1,11 @@
+providers = ["php", "node"]
+
+[phases.build]
+cmds = [
+    "composer install --no-dev --optimize-autoloader --no-interaction",
+    "npm ci",
+    "npm run build",
+]
+
+[start]
+cmd = "bash scripts/railway-start.sh"

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Your download</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: system-ui, sans-serif; background: #f4f5f7; margin: 0; padding: 2rem 1rem; color: #1a1a1a; }
+        .card { max-width: 480px; margin: 0 auto; background: #fff; border-radius: 12px; padding: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+        h1 { font-size: 1.25rem; margin-top: 0; }
+        .file { display: flex; align-items: center; justify-content: space-between; padding: .75rem 0; border-top: 1px solid #eee; }
+        .file:first-of-type { border-top: none; }
+        .btn { background: #008060; color: #fff; text-decoration: none; padding: .5rem 1rem; border-radius: 6px; font-size: .9rem; }
+        .meta { color: #6b7280; font-size: .85rem; margin-top: 1.5rem; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>{{ $downloadToken->digitalProduct->shopify_product_title }}</h1>
+        <p>Order {{ $downloadToken->order->shopify_order_number }}</p>
+
+        @foreach ($files as $file)
+            <div class="file">
+                <span>{{ $file->original_filename }}</span>
+                <a class="btn" href="{{ route('customer.downloads.file', ['token' => $downloadToken->token, 'file' => $file->id]) }}">Download</a>
+            </div>
+        @endforeach
+
+        <p class="meta">
+            @if ($downloadToken->max_downloads)
+                {{ $downloadToken->download_count }} of {{ $downloadToken->max_downloads }} downloads used.
+            @else
+                Unlimited downloads.
+            @endif
+            @if ($downloadToken->expires_at)
+                <br>Link expires {{ $downloadToken->expires_at->format('M j, Y g:i A') }}.
+            @endif
+        </p>
+    </div>
+</body>
+</html>
