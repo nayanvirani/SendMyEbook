@@ -88,7 +88,11 @@ class ShopifyAuthService
      * scopes and embeds the app before we ever see a request, so there is
      * no authorization code to exchange, only this session token.
      *
-     * @return array{access_token: string, scope: string}
+     * `expiring: 1` opts into Shopify's current offline token model — a
+     * 1-hour access token plus a 90-day refresh token — since Shopify has
+     * discontinued non-expiring offline tokens.
+     *
+     * @return array{access_token: string, refresh_token: string, expires_in: int, scope: string}
      */
     public function exchangeSessionTokenForOfflineToken(string $shop, string $sessionToken): array
     {
@@ -99,10 +103,34 @@ class ShopifyAuthService
             'subject_token' => $sessionToken,
             'subject_token_type' => 'urn:ietf:params:oauth:token-type:id_token',
             'requested_token_type' => 'urn:shopify:params:oauth:token-type:offline-access-token',
+            'expiring' => 1,
         ]);
 
         if ($response->failed()) {
             throw new RuntimeException('Shopify token exchange failed: '.$response->body());
+        }
+
+        return $response->json();
+    }
+
+    /**
+     * Exchanges a still-valid refresh_token for a new access/refresh token
+     * pair. Every refresh issues a brand-new refresh token too — the old
+     * one is consumed and must be replaced in storage, not reused.
+     *
+     * @return array{access_token: string, refresh_token: string, expires_in: int, scope: string}
+     */
+    public function refreshOfflineToken(string $shop, string $refreshToken): array
+    {
+        $response = Http::asJson()->post("https://{$shop}/admin/oauth/access_token", [
+            'grant_type' => 'refresh_token',
+            'client_id' => config('shopify.api_key'),
+            'client_secret' => config('shopify.api_secret'),
+            'refresh_token' => $refreshToken,
+        ]);
+
+        if ($response->failed()) {
+            throw new RuntimeException('Shopify token refresh failed: '.$response->body());
         }
 
         return $response->json();

@@ -67,6 +67,10 @@ class VerifyShopifySessionToken
             ['shop_domain' => $shopDomain],
             [
                 'access_token' => $tokenResponse['access_token'],
+                'refresh_token' => $tokenResponse['refresh_token'] ?? null,
+                'access_token_expires_at' => isset($tokenResponse['expires_in'])
+                    ? now()->addSeconds((int) $tokenResponse['expires_in'])
+                    : null,
                 'scope' => $tokenResponse['scope'] ?? null,
                 'is_active' => true,
                 'installed_at' => now(),

@@ -16,6 +16,8 @@ class Shop extends Model
     protected $fillable = [
         'shop_domain',
         'access_token',
+        'refresh_token',
+        'access_token_expires_at',
         'scope',
         'shop_name',
         'email',
@@ -29,10 +31,22 @@ class Shop extends Model
     {
         return [
             'access_token' => 'encrypted',
+            'refresh_token' => 'encrypted',
+            'access_token_expires_at' => 'datetime',
             'is_active' => 'boolean',
             'installed_at' => 'datetime',
             'uninstalled_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Whether the stored access token is expired or close enough to
+     * expiring that it should be refreshed before use.
+     */
+    public function accessTokenNeedsRefresh(): bool
+    {
+        return $this->access_token_expires_at !== null
+            && $this->access_token_expires_at->subMinutes(5)->isPast();
     }
 
     public function digitalProducts(): HasMany

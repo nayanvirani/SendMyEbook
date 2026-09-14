@@ -5,6 +5,8 @@ namespace App\Services\Shopify;
 use App\Models\Shop;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 /**
  * Thin wrapper around the Shopify Admin GraphQL API, authenticated with a
@@ -12,13 +14,15 @@ use Illuminate\Support\Facades\Http;
  */
 class ShopifyGraphQLClient
 {
-    public function __construct(private readonly Shop $shop) {}
+    public function __construct(private readonly Shop $shop, private readonly ShopifyAuthService $authService = new ShopifyAuthService) {}
 
     /**
      * @param  array<string, mixed>  $variables
      */
     public function query(string $query, array $variables = []): Response
     {
+        $this->ensureFreshToken();
+
         $version = config('shopify.api_version');
 
         return Http::withHeaders([
@@ -28,6 +32,39 @@ class ShopifyGraphQLClient
             'query' => $query,
             'variables' => $variables,
         ]);
+    }
+
+    /**
+     * Offline access tokens now expire after an hour. Refresh proactively
+     * (using the stored refresh_token) whenever the token is missing an
+     * expiry, or is close to it, before making the actual API call.
+     */
+    private function ensureFreshToken(): void
+    {
+        if (! $this->shop->accessTokenNeedsRefresh() || ! $this->shop->refresh_token) {
+            return;
+        }
+
+        try {
+            $tokenResponse = $this->authService->refreshOfflineToken($this->shop->shop_domain, $this->shop->refresh_token);
+        } catch (Throwable $e) {
+            // Fall through and let the API call itself fail with the stale
+            // token rather than blocking the request entirely — a refresh
+            // failure here shouldn't be fatal if the current token still
+            // happens to work for a few more seconds.
+            Log::error('Shopify offline token refresh failed', [
+                'shop' => $this->shop->shop_domain,
+                'error' => $e->getMessage(),
+            ]);
+
+            return;
+        }
+
+        $this->shop->forceFill([
+            'access_token' => $tokenResponse['access_token'],
+            'refresh_token' => $tokenResponse['refresh_token'],
+            'access_token_expires_at' => now()->addSeconds((int) $tokenResponse['expires_in']),
+        ])->save();
     }
 
     /**
