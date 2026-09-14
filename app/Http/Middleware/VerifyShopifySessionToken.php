@@ -59,7 +59,7 @@ class VerifyShopifySessionToken
         try {
             $tokenResponse = $this->authService->exchangeSessionTokenForOfflineToken($shopDomain, $sessionToken);
         } catch (Throwable $e) {
-            Log::warning('Shopify token exchange failed', ['shop' => $shopDomain, 'error' => $e->getMessage()]);
+            Log::error('Shopify token exchange failed', ['shop' => $shopDomain, 'error' => $e->getMessage()]);
             abort(401, 'Shop not installed.');
         }
 
