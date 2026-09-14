@@ -107,22 +107,22 @@ export default function DigitalProductForm() {
         }));
     }, [variantOptions]);
 
+    const buildPayload = useCallback(() => ({
+        ...form,
+        max_downloads: form.max_downloads === '' ? null : Number(form.max_downloads),
+        expiration_value: form.expiration_value === '' ? null : Number(form.expiration_value),
+        shopify_variant_id: form.shopify_variant_id || null,
+        shopify_variant_title: form.shopify_variant_title || null,
+    }), [form]);
+
     const handleSave = useCallback(async () => {
         setSaving(true);
         setError(null);
         try {
-            const payload = {
-                ...form,
-                max_downloads: form.max_downloads === '' ? null : Number(form.max_downloads),
-                expiration_value: form.expiration_value === '' ? null : Number(form.expiration_value),
-                shopify_variant_id: form.shopify_variant_id || null,
-                shopify_variant_title: form.shopify_variant_title || null,
-            };
-
             if (isEditing) {
-                await api.put(`/digital-products/${id}`, payload);
+                await api.put(`/digital-products/${id}`, buildPayload());
             } else {
-                const created = await api.post('/digital-products', payload);
+                const created = await api.post('/digital-products', buildPayload());
                 navigate(`/digital-products/${created.id}`, { replace: true });
                 return;
             }
@@ -132,17 +132,28 @@ export default function DigitalProductForm() {
         } finally {
             setSaving(false);
         }
-    }, [form, id, isEditing, navigate]);
+    }, [buildPayload, id, isEditing, navigate]);
 
     const handleDrop = useCallback(async (_dropped, accepted) => {
-        if (!isEditing) {
-            setError('Save the digital product before uploading files.');
+        if (!isEditing && !form.shopify_product_id) {
+            setError('Select a Shopify product first.');
             return;
         }
+
         setUploading(true);
+        setError(null);
         try {
+            // Not saved yet — create it now rather than making the merchant
+            // save first and come back to add files as a separate step.
+            let productId = id;
+            if (!isEditing) {
+                const created = await api.post('/digital-products', buildPayload());
+                productId = created.id;
+                navigate(`/digital-products/${productId}`, { replace: true });
+            }
+
             for (const file of accepted) {
-                const uploaded = await uploadFile(id, file);
+                const uploaded = await uploadFile(productId, file);
                 setFiles((prev) => [...prev, uploaded]);
             }
         } catch (e) {
@@ -150,7 +161,7 @@ export default function DigitalProductForm() {
         } finally {
             setUploading(false);
         }
-    }, [id, isEditing]);
+    }, [id, isEditing, form.shopify_product_id, buildPayload, navigate]);
 
     const removeFile = async (fileId) => {
         await api.delete(`/files/${fileId}`);
