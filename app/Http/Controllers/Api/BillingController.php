@@ -24,6 +24,20 @@ class BillingController extends Controller
         return response()->json(Plan::query()->where('is_active', true)->orderBy('sort_order')->get());
     }
 
+    /**
+     * Lets the embedded app decide, before hitting anything else, whether
+     * to show the paywall or the real app.
+     */
+    public function status(Request $request): JsonResponse
+    {
+        $subscription = $this->shop($request)->activeSubscription;
+
+        return response()->json([
+            'active' => (bool) $subscription,
+            'plan' => $subscription?->plan->only(['id', 'name', 'handle']),
+        ]);
+    }
+
     public function subscribe(Request $request): JsonResponse
     {
         $shop = $this->shop($request);

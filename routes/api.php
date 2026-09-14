@@ -22,26 +22,32 @@ use Illuminate\Support\Facades\Route;
 |
 */
 Route::middleware('shopify.session')->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'index']);
-
-    Route::apiResource('digital-products', DigitalProductController::class);
-
-    Route::post('/digital-products/{digitalProduct}/files', [FileController::class, 'store']);
-    Route::patch('/files/{file}/complete', [FileController::class, 'complete']);
-    Route::delete('/files/{file}', [FileController::class, 'destroy']);
-
-    Route::get('/orders', [OrderController::class, 'index']);
-    Route::get('/orders/{order}', [OrderController::class, 'show']);
-
-    Route::get('/downloads', [DownloadController::class, 'index']);
-
-    Route::get('/analytics', [AnalyticsController::class, 'index']);
-
-    Route::get('/settings', [SettingController::class, 'show']);
-    Route::put('/settings', [SettingController::class, 'update']);
-
+    // No free plan — a shop that has never subscribed can only reach
+    // billing itself, plus this one status check the frontend uses to
+    // decide whether to show the paywall before hitting anything else.
     Route::get('/billing/plans', [BillingController::class, 'plans']);
     Route::post('/billing/subscribe', [BillingController::class, 'subscribe']);
+    Route::get('/subscription-status', [BillingController::class, 'status']);
+
+    Route::middleware('active_subscription')->group(function () {
+        Route::get('/dashboard', [DashboardController::class, 'index']);
+
+        Route::apiResource('digital-products', DigitalProductController::class);
+
+        Route::post('/digital-products/{digitalProduct}/files', [FileController::class, 'store']);
+        Route::patch('/files/{file}/complete', [FileController::class, 'complete']);
+        Route::delete('/files/{file}', [FileController::class, 'destroy']);
+
+        Route::get('/orders', [OrderController::class, 'index']);
+        Route::get('/orders/{order}', [OrderController::class, 'show']);
+
+        Route::get('/downloads', [DownloadController::class, 'index']);
+
+        Route::get('/analytics', [AnalyticsController::class, 'index']);
+
+        Route::get('/settings', [SettingController::class, 'show']);
+        Route::put('/settings', [SettingController::class, 'update']);
+    });
 });
 
 /*

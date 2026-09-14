@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureActiveSubscription;
 use App\Http\Middleware\EnsureEmbeddedResponseHeaders;
 use App\Http\Middleware\EnsureIsSuperAdmin;
 use App\Http\Middleware\VerifyShopifySessionToken;
@@ -28,6 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'shopify.webhook' => VerifyShopifyWebhook::class,
             'shopify.session' => VerifyShopifySessionToken::class,
             'super_admin' => EnsureIsSuperAdmin::class,
+            'active_subscription' => EnsureActiveSubscription::class,
         ]);
 
         // The only session-cookie login in this app is the platform-owner
