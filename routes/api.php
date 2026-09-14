@@ -26,7 +26,6 @@ Route::middleware('shopify.session')->group(function () {
     // billing itself, plus this one status check the frontend uses to
     // decide whether to show the paywall before hitting anything else.
     Route::get('/billing/plans', [BillingController::class, 'plans']);
-    Route::post('/billing/subscribe', [BillingController::class, 'subscribe']);
     Route::get('/subscription-status', [BillingController::class, 'status']);
 
     Route::middleware('active_subscription')->group(function () {
@@ -71,4 +70,9 @@ Route::middleware('shopify.webhook')->group(function () {
     Route::post('/webhooks/customers-data-request', [WebhookController::class, 'customersDataRequest']);
     Route::post('/webhooks/customers-redact', [WebhookController::class, 'customersRedact']);
     Route::post('/webhooks/shop-redact', [WebhookController::class, 'shopRedact']);
+
+    // Shopify App Pricing: fires whenever a shop's subscription is
+    // created, activated, cancelled, frozen, etc. on Shopify's own hosted
+    // plan page — this app never creates the subscription itself.
+    Route::post('/webhooks/app-subscriptions-update', [WebhookController::class, 'appSubscriptionsUpdate']);
 });

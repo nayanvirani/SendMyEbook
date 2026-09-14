@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Jobs\ProcessOrderPaidJob;
 use App\Jobs\ProcessRefundCreatedJob;
 use App\Models\Order;
+use App\Models\Plan;
 use App\Models\Shop;
+use App\Models\Subscription;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -118,6 +120,38 @@ class WebhookController extends Controller
     {
         $shop = $this->resolveShop($request);
         $shop->delete();
+
+        return response()->json(['status' => 'accepted']);
+    }
+
+    /**
+     * Shopify App Pricing: the only place this app ever learns that a
+     * shop actually has a subscription. Fires on every status change
+     * (created, activated, cancelled, frozen, ...) for a plan picked on
+     * Shopify's own hosted page — this app never creates the charge.
+     */
+    public function appSubscriptionsUpdate(Request $request): JsonResponse
+    {
+        $shop = $this->resolveShop($request);
+        $payload = $request->json()->all();
+        $subscription = $payload['app_subscription'] ?? $payload;
+
+        $chargeId = (string) ($subscription['admin_graphql_api_id'] ?? '');
+        $planName = strtolower((string) ($subscription['name'] ?? ''));
+        $status = strtolower((string) ($subscription['status'] ?? 'pending'));
+
+        if (! $chargeId) {
+            return response()->json(['status' => 'ignored']);
+        }
+
+        Subscription::query()->updateOrCreate(
+            ['shop_id' => $shop->id, 'shopify_charge_id' => $chargeId],
+            [
+                'plan_id' => Plan::query()->where('handle', $planName)->value('id'),
+                'shopify_plan_name' => $planName ?: null,
+                'status' => $status,
+            ]
+        );
 
         return response()->json(['status' => 'accepted']);
     }

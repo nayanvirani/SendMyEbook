@@ -28,6 +28,11 @@ return [
     // iframe. Must match the App URL configured in the Partner Dashboard.
     'app_url' => env('SHOPIFY_APP_URL', env('APP_URL')),
 
+    // The app's handle in Shopify's own URLs, e.g.
+    // admin.shopify.com/store/{shop}/apps/{app_handle}. Needed to build
+    // the link to Shopify's own hosted App Pricing plan-selection page.
+    'app_handle' => env('SHOPIFY_APP_HANDLE', 'sendmyebook'),
+
     /*
     |--------------------------------------------------------------------------
     | Webhooks

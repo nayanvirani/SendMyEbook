@@ -5,17 +5,17 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
 use App\Models\Shop;
-use App\Models\Subscription;
-use App\Services\Shopify\ShopifyGraphQLClient;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 
 /**
- * Shopify-managed recurring billing (Shopify handles the actual card
- * charge; this app only creates/tracks the subscription record via the
- * Admin GraphQL API).
+ * Billing is Shopify App Pricing (Managed Pricing): plans, prices and
+ * trials live in the Partner Dashboard, and merchants pick a plan on
+ * Shopify's own hosted page — this app never creates a subscription
+ * itself. It only displays the plans (for a consistent in-app preview)
+ * and links out to that hosted page; app_subscriptions/update webhooks
+ * (see Webhooks\WebhookController) are the only way this app learns a
+ * subscription actually happened.
  */
 class BillingController extends Controller
 {
@@ -26,110 +26,27 @@ class BillingController extends Controller
 
     /**
      * Lets the embedded app decide, before hitting anything else, whether
-     * to show the paywall or the real app.
+     * to show the paywall or the real app — and gives it the link to
+     * Shopify's hosted plan page for the paywall's call to action.
      */
     public function status(Request $request): JsonResponse
     {
-        $subscription = $this->shop($request)->activeSubscription;
+        $shop = $this->shop($request);
+        $subscription = $shop->activeSubscription;
 
         return response()->json([
             'active' => (bool) $subscription,
-            'plan' => $subscription?->plan->only(['id', 'name', 'handle']),
+            'plan' => $subscription?->plan?->only(['id', 'name', 'handle']),
+            'manage_plan_url' => $this->managePlanUrl($shop),
         ]);
     }
 
-    public function subscribe(Request $request): JsonResponse
+    private function managePlanUrl(Shop $shop): string
     {
-        $shop = $this->shop($request);
+        $shopHandle = str_replace('.myshopify.com', '', $shop->shop_domain);
+        $appHandle = config('shopify.app_handle');
 
-        $data = $request->validate(['plan_id' => ['required', 'exists:plans,id']]);
-        $plan = Plan::query()->findOrFail($data['plan_id']);
-
-        $client = new ShopifyGraphQLClient($shop);
-
-        $body = $client->query(<<<'GQL'
-            mutation appSubscriptionCreate($name: String!, $returnUrl: URL!, $lineItems: [AppSubscriptionLineItemInput!]!, $test: Boolean!) {
-                appSubscriptionCreate(name: $name, returnUrl: $returnUrl, lineItems: $lineItems, test: $test) {
-                    userErrors { field message }
-                    confirmationUrl
-                    appSubscription { id }
-                }
-            }
-            GQL, [
-            'name' => "SendMyEbook — {$plan->name}",
-            'returnUrl' => route('billing.callback', ['shop' => $shop->shop_domain]),
-            'test' => config('shopify.billing_test_mode'),
-            'lineItems' => [[
-                'plan' => [
-                    'appRecurringPricingDetails' => [
-                        'price' => ['amount' => (float) $plan->price, 'currencyCode' => 'USD'],
-                        'interval' => 'EVERY_30_DAYS',
-                    ],
-                ],
-            ]],
-        ])->json();
-
-        if (! empty($body['errors'])) {
-            Log::error('appSubscriptionCreate GraphQL error', ['shop' => $shop->shop_domain, 'errors' => $body['errors']]);
-
-            return response()->json(['errors' => $body['errors']], 502);
-        }
-
-        $response = $body['data']['appSubscriptionCreate'] ?? null;
-
-        if (! empty($response['userErrors'])) {
-            return response()->json(['errors' => $response['userErrors']], 422);
-        }
-
-        if (empty($response['appSubscription']['id']) || empty($response['confirmationUrl'])) {
-            Log::error('appSubscriptionCreate returned no subscription', ['shop' => $shop->shop_domain, 'response' => $response]);
-
-            return response()->json(['errors' => ['Shopify did not return a subscription for this store.']], 502);
-        }
-
-        Subscription::query()->create([
-            'shop_id' => $shop->id,
-            'plan_id' => $plan->id,
-            'shopify_charge_id' => $response['appSubscription']['id'],
-            'status' => 'pending',
-        ]);
-
-        return response()->json(['confirmation_url' => $response['confirmationUrl']]);
-    }
-
-    /**
-     * Shopify redirects the merchant's top-level browser window here after
-     * they approve or decline the charge on Shopify's own page.
-     */
-    public function callback(Request $request): RedirectResponse
-    {
-        $shopDomain = (string) $request->query('shop');
-        $shop = Shop::query()->where('shop_domain', $shopDomain)->firstOrFail();
-
-        $chargeId = (string) $request->query('charge_id');
-        $subscription = Subscription::query()
-            ->where('shop_id', $shop->id)
-            ->where('shopify_charge_id', 'like', "%{$chargeId}")
-            ->latest()
-            ->first();
-
-        if ($subscription) {
-            $client = new ShopifyGraphQLClient($shop);
-            $node = $client->query(<<<'GQL'
-                query($id: ID!) {
-                    node(id: $id) {
-                        ... on AppSubscription { status }
-                    }
-                }
-                GQL, ['id' => $subscription->shopify_charge_id])->json('data.node');
-
-            $subscription->update([
-                'status' => strtolower($node['status'] ?? 'declined'),
-                'current_period_end' => now()->addDays(30),
-            ]);
-        }
-
-        return redirect()->route('embedded.app', ['shop' => $shopDomain]);
+        return "https://admin.shopify.com/store/{$shopHandle}/charges/{$appHandle}/pricing_plans";
     }
 
     private function shop(Request $request): Shop

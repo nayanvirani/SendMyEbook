@@ -32,3 +32,13 @@ uri = "https://sendmyebook-production.up.railway.app/api/webhooks/customers-reda
 [[webhooks.subscriptions]]
 compliance_topics = ["shop/redact"]
 uri = "https://sendmyebook-production.up.railway.app/api/webhooks/shop-redact"
+
+# Shopify App Pricing is enabled for this app (configured in the Partner
+# Dashboard, not here) — merchants pick a plan on Shopify's own hosted
+# page and Shopify creates the subscription itself. This app never calls
+# appSubscriptionCreate; it only ever learns about a subscription via this
+# webhook. Declared here (not per-shop dynamic registration) so it's
+# guaranteed regardless of when a shop was provisioned.
+[[webhooks.subscriptions]]
+topics = ["app_subscriptions/update"]
+uri = "https://sendmyebook-production.up.railway.app/api/webhooks/app-subscriptions-update"

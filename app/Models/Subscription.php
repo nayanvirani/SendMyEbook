@@ -16,6 +16,7 @@ class Subscription extends Model
         'shop_id',
         'plan_id',
         'shopify_charge_id',
+        'shopify_plan_name',
         'status',
         'current_period_end',
     ];

@@ -5,7 +5,6 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\PlanController as AdminPlanController;
 use App\Http\Controllers\Admin\ShopController as AdminShopController;
 use App\Http\Controllers\Admin\SubscriptionController as AdminSubscriptionController;
-use App\Http\Controllers\Api\BillingController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Customer\DownloadAccessController;
 use App\Http\Controllers\EmbeddedAppController;
@@ -14,10 +13,6 @@ use Illuminate\Support\Facades\Route;
 // Shopify OAuth install flow.
 Route::get('/auth', [AuthController::class, 'redirectToShopify'])->name('auth.redirect');
 Route::get('/auth/callback', [AuthController::class, 'callback'])->name('auth.callback');
-
-// Shopify redirects the merchant's browser here (a top-level navigation,
-// not an authenticatedFetch) after they approve/decline a billing charge.
-Route::get('/billing/callback', [BillingController::class, 'callback'])->name('billing.callback');
 
 // Public, token-gated customer download pages (no Shopify auth involved).
 Route::get('/downloads/{token}', [DownloadAccessController::class, 'show'])->name('customer.downloads.show');
