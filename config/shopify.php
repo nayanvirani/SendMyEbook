@@ -10,12 +10,12 @@ return [
 
     'api_key' => env('SHOPIFY_API_KEY'),
     'api_secret' => env('SHOPIFY_API_SECRET'),
-    'api_version' => env('SHOPIFY_API_VERSION', '2025-01'),
+    'api_version' => env('SHOPIFY_API_VERSION', '2026-07'),
 
     // Comma-separated in .env, exposed here as an array.
     'scopes' => array_filter(array_map('trim', explode(',', env(
         'SHOPIFY_SCOPES',
-        'read_products,read_orders,read_returns,write_own_subscription_contracts'
+        'read_products,read_orders,read_returns'
     )))),
 
     /*
