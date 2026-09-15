@@ -7,10 +7,14 @@
     <style>
         body { font-family: system-ui, sans-serif; background: #f4f5f7; margin: 0; padding: 2rem 1rem; color: #1a1a1a; }
         .card { max-width: 480px; margin: 0 auto; background: #fff; border-radius: 12px; padding: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,.08); text-align: center; }
+        .logo { display: block; max-height: 40px; margin: 0 auto 1.5rem; }
     </style>
 </head>
 <body>
     <div class="card">
+        @if ($logoUrl ?? null)
+            <img class="logo" src="{{ $logoUrl }}" alt="">
+        @endif
         @php
             $messages = [
                 'invalid' => 'This download link is not valid.',

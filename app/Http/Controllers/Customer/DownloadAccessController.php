@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Customer;
 use App\Http\Controllers\Controller;
 use App\Models\DownloadToken;
 use App\Models\File;
+use App\Models\Setting;
 use App\Services\FileStorage\FileStorageService;
 use App\Services\PdfWatermark\PdfWatermarker;
 use Illuminate\Contracts\View\View;
@@ -28,22 +29,37 @@ class DownloadAccessController extends Controller
     public function show(string $token): View
     {
         $downloadToken = DownloadToken::query()
-            ->with(['digitalProduct.files', 'order'])
+            ->with(['digitalProduct.files', 'order.shop.setting'])
             ->where('token', $token)
             ->first();
 
         if (! $downloadToken) {
-            return view('customer.download-denied', ['reason' => 'invalid']);
+            return view('customer.download-denied', ['reason' => 'invalid', ...$this->branding(null)]);
         }
 
         if (! $downloadToken->isRedeemable()) {
-            return view('customer.download-denied', ['reason' => $downloadToken->status]);
+            return view('customer.download-denied', [
+                'reason' => $downloadToken->status,
+                ...$this->branding($downloadToken->order->shop->setting),
+            ]);
         }
 
         return view('customer.download-show', [
             'downloadToken' => $downloadToken,
             'files' => $downloadToken->digitalProduct->files,
+            ...$this->branding($downloadToken->order->shop->setting),
         ]);
+    }
+
+    /**
+     * @return array{logoUrl: ?string, brandColor: string}
+     */
+    private function branding(?Setting $setting): array
+    {
+        return [
+            'logoUrl' => $setting?->logo_url,
+            'brandColor' => $setting?->brand_color ?: '#008060',
+        ];
     }
 
     public function download(Request $request, string $token, File $file): RedirectResponse|BinaryFileResponse

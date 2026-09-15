@@ -1,4 +1,8 @@
 @component('mail::message')
+@if ($logoUrl)
+<img src="{{ $logoUrl }}" alt="{{ $shop->shop_name }}" style="max-height: 40px; margin-bottom: 16px;">
+@endif
+
 # Thanks for your order, {{ $order->customer_name ?? 'there' }}!
 
 Your purchase from **{{ $shop->shop_name }}** (order {{ $order->shopify_order_number }}) is ready to download.

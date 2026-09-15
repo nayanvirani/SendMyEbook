@@ -29,6 +29,7 @@ class SettingController extends Controller
             'default_max_downloads' => ['nullable', 'integer', 'min:1'],
             'default_expiration_days' => ['nullable', 'integer', 'min:1'],
             'logo_url' => ['nullable', 'url'],
+            'brand_color' => ['nullable', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'mail_from_address' => ['nullable', 'email'],
             'smtp_host' => ['nullable', 'string', 'max:255'],
             'smtp_port' => ['nullable', 'integer', 'min:1', 'max:65535'],
@@ -86,7 +87,7 @@ class SettingController extends Controller
         return [
             ...$setting->only([
                 'email_from_name', 'support_email', 'default_max_downloads',
-                'default_expiration_days', 'logo_url', 'mail_from_address',
+                'default_expiration_days', 'logo_url', 'brand_color', 'mail_from_address',
                 'smtp_host', 'smtp_port', 'smtp_username', 'smtp_encryption',
             ]),
             'has_smtp_password' => filled($setting->smtp_password),

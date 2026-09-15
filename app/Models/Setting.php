@@ -19,6 +19,7 @@ class Setting extends Model
         'default_max_downloads',
         'default_expiration_days',
         'logo_url',
+        'brand_color',
         'mail_from_address',
         'smtp_host',
         'smtp_port',

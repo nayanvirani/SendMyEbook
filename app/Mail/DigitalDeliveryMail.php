@@ -32,6 +32,7 @@ class DigitalDeliveryMail extends Mailable
             ->markdown('emails.digital-delivery', [
                 'shop' => $this->shop,
                 'order' => $this->order,
+                'logoUrl' => $this->shop->setting?->logo_url,
                 'downloadLinks' => $this->downloadTokens->map(fn ($token) => [
                     'productTitle' => $token->digitalProduct->shopify_product_title,
                     'url' => route('customer.downloads.show', ['token' => $token->token]),

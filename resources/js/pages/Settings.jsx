@@ -86,6 +86,48 @@ export default function Settings() {
                 <Card>
                     <BlockStack gap="300">
                         <BlockStack gap="100">
+                            <Text as="h2" variant="headingMd">Branding</Text>
+                            <Text as="p" tone="subdued">
+                                Shown on the customer download page and in delivery emails instead of the
+                                default plain look.
+                            </Text>
+                        </BlockStack>
+
+                        <FormLayout>
+                            <TextField
+                                label="Logo URL"
+                                placeholder="https://yourstore.com/logo.png"
+                                value={form.logo_url || ''}
+                                onChange={field('logo_url')}
+                                autoComplete="off"
+                            />
+                            <TextField
+                                label="Brand color"
+                                placeholder="#008060"
+                                value={form.brand_color || ''}
+                                onChange={field('brand_color')}
+                                autoComplete="off"
+                                connectedRight={
+                                    <div
+                                        style={{
+                                            width: '2.25rem',
+                                            height: '2.25rem',
+                                            borderRadius: 'var(--p-border-radius-200)',
+                                            border: '1px solid var(--p-color-border)',
+                                            background: /^#[0-9a-fA-F]{6}$/.test(form.brand_color || '')
+                                                ? form.brand_color
+                                                : 'transparent',
+                                        }}
+                                    />
+                                }
+                            />
+                        </FormLayout>
+                    </BlockStack>
+                </Card>
+
+                <Card>
+                    <BlockStack gap="300">
+                        <BlockStack gap="100">
                             <Text as="h2" variant="headingMd">Email delivery</Text>
                             <Text as="p" tone="subdued">
                                 By default, delivery emails are sent from SendMyEbook's own account. Add your own
