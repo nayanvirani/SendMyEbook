@@ -71,6 +71,8 @@ class DigitalProductController extends Controller
             'expiration_value' => ['nullable', 'integer', 'min:1'],
             'expiration_unit' => ['sometimes', 'in:hours,days'],
             'revoke_on_refund' => ['sometimes', 'boolean'],
+            'requires_license_key' => ['sometimes', 'boolean'],
+            'watermark_pdfs' => ['sometimes', 'boolean'],
         ]);
     }
 

@@ -1,0 +1,23 @@
+# Learn more about configuring your checkout UI extension:
+# https://shopify.dev/docs/api/checkout-ui-extensions/latest/configuration
+
+# The version of APIs your extension will receive. Learn more:
+# https://shopify.dev/docs/api/usage/versioning
+api_version = "2026-07"
+
+[[extensions]]
+name = "thank-you-downloads"
+handle = "thank-you-downloads"
+type = "ui_extension"
+uid = "7b6e438f-a1cc-2763-f75f-615d7ce0c60000a5ee27"
+
+# Renders on the Thank You page (order confirmation), not the checkout
+# page itself — the order exists by the time this target renders.
+[[extensions.targeting]]
+module = "./src/Checkout.jsx"
+target = "purchase.thank-you.block.render"
+
+[extensions.capabilities]
+# Lets the extension call our own backend to look up this order's
+# download links.
+network_access = true

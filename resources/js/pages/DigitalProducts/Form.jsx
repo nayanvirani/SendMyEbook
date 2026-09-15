@@ -28,6 +28,8 @@ const emptyForm = {
     expiration_value: '',
     expiration_unit: 'days',
     revoke_on_refund: true,
+    requires_license_key: false,
+    watermark_pdfs: false,
 };
 
 // Shopify's resource picker returns GraphQL IDs like
@@ -64,6 +66,8 @@ export default function DigitalProductForm() {
                 expiration_value: product.expiration_value ?? '',
                 expiration_unit: product.expiration_unit,
                 revoke_on_refund: product.revoke_on_refund,
+                requires_license_key: product.requires_license_key,
+                watermark_pdfs: product.watermark_pdfs,
             });
             setFiles(product.files || []);
         }).catch(() => setError('Could not load this digital product.'));
@@ -243,6 +247,18 @@ export default function DigitalProductForm() {
                             label="Disable download access after a refund"
                             checked={form.revoke_on_refund}
                             onChange={field('revoke_on_refund')}
+                        />
+                        <Checkbox
+                            label="Generate a license key for each purchase"
+                            helpText="Shown to the customer alongside the download link — useful for software, plugins, or templates."
+                            checked={form.requires_license_key}
+                            onChange={field('requires_license_key')}
+                        />
+                        <Checkbox
+                            label="Watermark PDF files with the customer's order info"
+                            helpText="Only applies to files uploaded as PDF."
+                            checked={form.watermark_pdfs}
+                            onChange={field('watermark_pdfs')}
                         />
                     </FormLayout>
                 </Card>

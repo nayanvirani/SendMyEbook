@@ -34,6 +34,7 @@ class DigitalDeliveryMail extends Mailable
                     'url' => route('customer.downloads.show', ['token' => $token->token]),
                     'maxDownloads' => $token->max_downloads,
                     'expiresAt' => $token->expires_at,
+                    'licenseKey' => $token->license_key,
                 ]),
             ]);
     }

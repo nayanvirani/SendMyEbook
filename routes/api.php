@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\DownloadController;
 use App\Http\Controllers\Api\FileController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\SettingController;
+use App\Http\Controllers\Api\StorefrontOrderController;
 use App\Http\Controllers\Webhooks\WebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -27,6 +28,11 @@ Route::middleware('shopify.session')->group(function () {
     // decide whether to show the paywall before hitting anything else.
     Route::get('/billing/plans', [BillingController::class, 'plans']);
     Route::get('/subscription-status', [BillingController::class, 'status']);
+
+    // Called by the Thank You page / Customer Account extensions — a
+    // customer's access to files they already paid for must not depend on
+    // whether the merchant's own subscription is currently active.
+    Route::get('/storefront/orders/{shopifyOrderId}/downloads', [StorefrontOrderController::class, 'downloads']);
 
     Route::middleware('active_subscription')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index']);

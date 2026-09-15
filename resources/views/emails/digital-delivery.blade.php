@@ -14,6 +14,9 @@ You can download this up to {{ $link['maxDownloads'] }} times.
 @if ($link['expiresAt'])
 This link expires on {{ $link['expiresAt']->format('M j, Y g:i A') }}.
 @endif
+@if ($link['licenseKey'])
+**License key:** {{ $link['licenseKey'] }}
+@endif
 
 @endforeach
 

@@ -18,6 +18,7 @@ class DownloadToken extends Model
         'order_id',
         'digital_product_id',
         'token',
+        'license_key',
         'max_downloads',
         'download_count',
         'expires_at',

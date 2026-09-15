@@ -23,6 +23,8 @@ class DigitalProductResource extends JsonResource
             'expiration_value' => $this->expiration_value,
             'expiration_unit' => $this->expiration_unit,
             'revoke_on_refund' => $this->revoke_on_refund,
+            'requires_license_key' => $this->requires_license_key,
+            'watermark_pdfs' => $this->watermark_pdfs,
             'files' => FileResource::collection($this->whenLoaded('files')),
             'files_count' => $this->whenCounted('files'),
             'created_at' => $this->created_at,

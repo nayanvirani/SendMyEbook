@@ -1,0 +1,24 @@
+# Learn more about configuring your Customer account UI extension:
+# https://shopify.dev/api/customer-account-ui-extensions/unstable/configuration
+
+# The version of APIs your extension will receive. Learn more:
+# https://shopify.dev/docs/api/usage/versioning
+api_version = "2026-07"
+
+[[extensions]]
+name = "my-downloads"
+handle = "my-downloads"
+type = "ui_extension"
+uid = "070c5ad0-d270-341a-4073-1719a561cd3c1df773e5"
+
+# Renders on a specific order's status page in the customer's account —
+# lets a customer re-open a past order's download links without needing
+# to find the original delivery email.
+[[extensions.targeting]]
+module = "./src/OrderStatusBlock.jsx"
+target = "customer-account.order-status.block.render"
+
+[extensions.capabilities]
+# Lets the extension call our own backend to look up this order's
+# download links.
+network_access = true

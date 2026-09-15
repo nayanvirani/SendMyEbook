@@ -24,12 +24,16 @@ class DigitalProduct extends Model
         'expiration_value',
         'expiration_unit',
         'revoke_on_refund',
+        'requires_license_key',
+        'watermark_pdfs',
     ];
 
     protected function casts(): array
     {
         return [
             'revoke_on_refund' => 'boolean',
+            'requires_license_key' => 'boolean',
+            'watermark_pdfs' => 'boolean',
         ];
     }
 

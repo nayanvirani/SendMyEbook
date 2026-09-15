@@ -75,11 +75,24 @@ class DeliveryService
             'order_id' => $order->id,
             'digital_product_id' => $digitalProduct->id,
             'token' => Str::random(48),
+            'license_key' => $digitalProduct->requires_license_key ? $this->generateLicenseKey() : null,
             'max_downloads' => $digitalProduct->max_downloads,
             'download_count' => 0,
             'expires_at' => $this->calculateExpiry($digitalProduct),
             'status' => 'active',
         ]);
+    }
+
+    /**
+     * A merchant-facing serial, not a cryptographic secret — it's shown to
+     * the customer, not used to authorize anything on its own. Grouped for
+     * readability: XXXX-XXXX-XXXX-XXXX.
+     */
+    private function generateLicenseKey(): string
+    {
+        return collect(range(1, 4))
+            ->map(fn () => Str::upper(Str::random(4)))
+            ->implode('-');
     }
 
     private function calculateExpiry(DigitalProduct $digitalProduct): ?Carbon
