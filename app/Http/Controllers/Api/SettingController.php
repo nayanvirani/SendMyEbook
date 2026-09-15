@@ -32,7 +32,7 @@ class SettingController extends Controller
             'logo_url' => ['nullable', 'url'],
             'brand_color' => ['nullable', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'mail_enabled' => ['sometimes', 'boolean'],
-            'mail_provider' => ['sometimes', 'in:platform_default,smtp,resend'],
+            'mail_provider' => ['sometimes', 'in:platform_default,smtp,mailgun,sendgrid,postmark,ses,resend'],
             'mail_from_address' => ['nullable', 'email'],
             'smtp_host' => ['nullable', 'string', 'max:255'],
             'smtp_port' => ['nullable', 'integer', 'min:1', 'max:65535'],
@@ -40,13 +40,24 @@ class SettingController extends Controller
             'smtp_password' => ['nullable', 'string'],
             'smtp_encryption' => ['nullable', 'in:tls,ssl'],
             'resend_api_key' => ['nullable', 'string'],
+            'mailgun_api_key' => ['nullable', 'string'],
+            'mailgun_domain' => ['nullable', 'string', 'max:255'],
+            'mailgun_region' => ['nullable', 'in:us,eu'],
+            'sendgrid_api_key' => ['nullable', 'string'],
+            'postmark_api_key' => ['nullable', 'string'],
+            'ses_access_key_id' => ['nullable', 'string'],
+            'ses_secret_access_key' => ['nullable', 'string'],
+            'ses_region' => ['nullable', 'string', 'max:32'],
         ]);
 
-        // Neither secret round-trips back to the browser (see present()
-        // below), so an empty value here means "leave it alone", not
-        // "clear it" — only overwrite when the merchant actually typed a
-        // new one.
-        foreach (['smtp_password', 'resend_api_key'] as $secret) {
+        // None of these secrets round-trip back to the browser (see
+        // present() below), so an empty value here means "leave it
+        // alone", not "clear it" — only overwrite when the merchant
+        // actually typed a new one.
+        foreach ([
+            'smtp_password', 'resend_api_key', 'mailgun_api_key', 'sendgrid_api_key',
+            'postmark_api_key', 'ses_access_key_id', 'ses_secret_access_key',
+        ] as $secret) {
             if (! filled($data[$secret] ?? null)) {
                 unset($data[$secret]);
             }
@@ -100,9 +111,15 @@ class SettingController extends Controller
                 'default_expiration_days', 'logo_url', 'brand_color',
                 'mail_enabled', 'mail_provider', 'mail_from_address',
                 'smtp_host', 'smtp_port', 'smtp_username', 'smtp_encryption',
+                'mailgun_domain', 'mailgun_region', 'ses_region',
             ]),
             'has_smtp_password' => filled($setting->smtp_password),
             'has_resend_api_key' => filled($setting->resend_api_key),
+            'has_mailgun_api_key' => filled($setting->mailgun_api_key),
+            'has_sendgrid_api_key' => filled($setting->sendgrid_api_key),
+            'has_postmark_api_key' => filled($setting->postmark_api_key),
+            'has_ses_access_key_id' => filled($setting->ses_access_key_id),
+            'has_ses_secret_access_key' => filled($setting->ses_secret_access_key),
         ];
     }
 

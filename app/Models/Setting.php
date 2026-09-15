@@ -29,6 +29,14 @@ class Setting extends Model
         'smtp_password',
         'smtp_encryption',
         'resend_api_key',
+        'mailgun_api_key',
+        'mailgun_domain',
+        'mailgun_region',
+        'sendgrid_api_key',
+        'postmark_api_key',
+        'ses_access_key_id',
+        'ses_secret_access_key',
+        'ses_region',
     ];
 
     protected function casts(): array
@@ -37,6 +45,11 @@ class Setting extends Model
             'mail_enabled' => 'boolean',
             'smtp_password' => 'encrypted',
             'resend_api_key' => 'encrypted',
+            'mailgun_api_key' => 'encrypted',
+            'sendgrid_api_key' => 'encrypted',
+            'postmark_api_key' => 'encrypted',
+            'ses_access_key_id' => 'encrypted',
+            'ses_secret_access_key' => 'encrypted',
         ];
     }
 

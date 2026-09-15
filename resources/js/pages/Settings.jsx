@@ -150,8 +150,12 @@ export default function Settings() {
                             disabled={!form.mail_enabled}
                             options={[
                                 { label: "SendMyEbook's own (default, no setup needed)", value: 'platform_default' },
-                                { label: 'Custom SMTP (Gmail, SendGrid, Mailgun, your own server, ...)', value: 'smtp' },
-                                { label: 'Resend (API key, no SMTP setup)', value: 'resend' },
+                                { label: 'Custom SMTP (Gmail, your own server, ...)', value: 'smtp' },
+                                { label: 'Mailgun', value: 'mailgun' },
+                                { label: 'SendGrid', value: 'sendgrid' },
+                                { label: 'Postmark', value: 'postmark' },
+                                { label: 'Amazon SES', value: 'ses' },
+                                { label: 'Resend', value: 'resend' },
                             ]}
                             value={form.mail_provider || 'platform_default'}
                             onChange={field('mail_provider')}
@@ -221,6 +225,128 @@ export default function Settings() {
                                     ]}
                                     value={form.smtp_encryption || ''}
                                     onChange={field('smtp_encryption')}
+                                />
+                            </FormLayout>
+                        )}
+
+                        {form.mail_provider === 'mailgun' && (
+                            <FormLayout>
+                                <TextField
+                                    label="From email address"
+                                    type="email"
+                                    helpText="Must be on a domain verified in your Mailgun account."
+                                    placeholder="downloads@yourstore.com"
+                                    value={form.mail_from_address || ''}
+                                    onChange={field('mail_from_address')}
+                                    autoComplete="off"
+                                />
+                                <TextField
+                                    label="Mailgun API key"
+                                    type="password"
+                                    placeholder={form.has_mailgun_api_key ? 'Saved — leave blank to keep it' : 'key-...'}
+                                    value={form.mailgun_api_key || ''}
+                                    onChange={field('mailgun_api_key')}
+                                    autoComplete="off"
+                                />
+                                <FormLayout.Group>
+                                    <TextField
+                                        label="Mailgun domain"
+                                        placeholder="mg.yourstore.com"
+                                        value={form.mailgun_domain || ''}
+                                        onChange={field('mailgun_domain')}
+                                        autoComplete="off"
+                                    />
+                                    <Select
+                                        label="Region"
+                                        options={[
+                                            { label: 'US', value: 'us' },
+                                            { label: 'EU', value: 'eu' },
+                                        ]}
+                                        value={form.mailgun_region || 'us'}
+                                        onChange={field('mailgun_region')}
+                                    />
+                                </FormLayout.Group>
+                            </FormLayout>
+                        )}
+
+                        {form.mail_provider === 'sendgrid' && (
+                            <FormLayout>
+                                <TextField
+                                    label="From email address"
+                                    type="email"
+                                    helpText="Must be on a domain verified in your SendGrid account."
+                                    placeholder="downloads@yourstore.com"
+                                    value={form.mail_from_address || ''}
+                                    onChange={field('mail_from_address')}
+                                    autoComplete="off"
+                                />
+                                <TextField
+                                    label="SendGrid API key"
+                                    type="password"
+                                    placeholder={form.has_sendgrid_api_key ? 'Saved — leave blank to keep it' : 'SG....'}
+                                    value={form.sendgrid_api_key || ''}
+                                    onChange={field('sendgrid_api_key')}
+                                    autoComplete="off"
+                                />
+                            </FormLayout>
+                        )}
+
+                        {form.mail_provider === 'postmark' && (
+                            <FormLayout>
+                                <TextField
+                                    label="From email address"
+                                    type="email"
+                                    helpText="Must be on a signature or domain verified in your Postmark account."
+                                    placeholder="downloads@yourstore.com"
+                                    value={form.mail_from_address || ''}
+                                    onChange={field('mail_from_address')}
+                                    autoComplete="off"
+                                />
+                                <TextField
+                                    label="Postmark server token"
+                                    type="password"
+                                    placeholder={form.has_postmark_api_key ? 'Saved — leave blank to keep it' : ''}
+                                    value={form.postmark_api_key || ''}
+                                    onChange={field('postmark_api_key')}
+                                    autoComplete="off"
+                                />
+                            </FormLayout>
+                        )}
+
+                        {form.mail_provider === 'ses' && (
+                            <FormLayout>
+                                <TextField
+                                    label="From email address"
+                                    type="email"
+                                    helpText="Must be a verified identity in your Amazon SES account."
+                                    placeholder="downloads@yourstore.com"
+                                    value={form.mail_from_address || ''}
+                                    onChange={field('mail_from_address')}
+                                    autoComplete="off"
+                                />
+                                <FormLayout.Group>
+                                    <TextField
+                                        label="Access key ID"
+                                        placeholder={form.has_ses_access_key_id ? 'Saved — leave blank to keep it' : 'AKIA...'}
+                                        value={form.ses_access_key_id || ''}
+                                        onChange={field('ses_access_key_id')}
+                                        autoComplete="off"
+                                    />
+                                    <TextField
+                                        label="Secret access key"
+                                        type="password"
+                                        placeholder={form.has_ses_secret_access_key ? 'Saved — leave blank to keep it' : ''}
+                                        value={form.ses_secret_access_key || ''}
+                                        onChange={field('ses_secret_access_key')}
+                                        autoComplete="off"
+                                    />
+                                </FormLayout.Group>
+                                <TextField
+                                    label="Region"
+                                    placeholder="us-east-1"
+                                    value={form.ses_region || ''}
+                                    onChange={field('ses_region')}
+                                    autoComplete="off"
                                 />
                             </FormLayout>
                         )}

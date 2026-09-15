@@ -5,10 +5,8 @@ namespace App\Services\Mail;
 use App\Models\Setting;
 use App\Models\Shop;
 use Illuminate\Mail\Mailer;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Str;
-use Resend\Contracts\Client as ResendClientContract;
+use Symfony\Component\Mailer\Transport;
 
 /**
  * Standardized outgoing-mail resolution for a shop: one master on/off
@@ -18,16 +16,15 @@ use Resend\Contracts\Client as ResendClientContract;
  *    MAIL_MAILER is set to). Needs no configuration; what every shop
  *    gets until it sets up its own.
  *  - "smtp": the merchant's own SMTP credentials (any provider that
- *    offers SMTP — Gmail, SendGrid, Mailgun, Postmark, their own
- *    server, ...).
- *  - "resend": the merchant's own Resend API key — no SMTP setup needed.
+ *    offers SMTP).
+ *  - "mailgun" / "sendgrid" / "postmark" / "ses" / "resend": the
+ *    merchant's own API credentials for that provider.
  *
- * Every mailer is built fresh under a one-off name on every call rather
- * than reusing a shop-keyed name, so a merchant changing their
- * credentials takes effect on the very next email — Laravel's mail
- * manager and the Resend package's underlying client are both cached by
- * name/singleton, which would otherwise keep serving stale credentials
- * for the lifetime of the (long-running) queue worker process.
+ * Every non-default provider is built directly from a Symfony Mailer DSN
+ * on every call — never cached by name or bound as a singleton — so a
+ * merchant changing their credentials takes effect on the very next
+ * email rather than continuing to serve stale ones for the lifetime of
+ * the (long-running) queue worker process.
  */
 class ShopMailerResolver
 {
@@ -59,41 +56,76 @@ class ShopMailerResolver
      */
     public function buildMailer(?Setting $setting): Mailer
     {
-        return match ($setting?->mail_provider) {
-            'smtp' => $this->buildSmtpMailer($setting),
-            'resend' => $this->buildResendMailer($setting),
-            default => Mail::mailer(),
+        $dsn = match ($setting?->mail_provider) {
+            'smtp' => $this->smtpDsn($setting),
+            'mailgun' => $this->mailgunDsn($setting),
+            'sendgrid' => $this->sendgridDsn($setting),
+            'postmark' => $this->postmarkDsn($setting),
+            'ses' => $this->sesDsn($setting),
+            'resend' => $this->resendDsn($setting),
+            default => null,
         };
+
+        if ($dsn === null) {
+            return Mail::mailer();
+        }
+
+        $transport = Transport::fromDsn($dsn);
+
+        return new Mailer('dynamic', app('view'), $transport, app('events'));
     }
 
-    private function buildSmtpMailer(Setting $setting): Mailer
+    private function smtpDsn(Setting $setting): string
     {
-        $mailerName = 'dynamic_smtp_'.Str::random(8);
+        $scheme = match ($setting->smtp_encryption) {
+            'ssl' => 'smtps',
+            default => 'smtp',
+        };
 
-        Config::set("mail.mailers.{$mailerName}", [
-            'transport' => 'smtp',
-            'host' => $setting->smtp_host,
-            'port' => $setting->smtp_port,
-            'username' => $setting->smtp_username,
-            'password' => $setting->smtp_password,
-            'encryption' => $setting->smtp_encryption ?: null,
-        ]);
-
-        return Mail::mailer($mailerName);
+        return sprintf(
+            '%s://%s:%s@%s:%s',
+            $scheme,
+            rawurlencode((string) $setting->smtp_username),
+            rawurlencode((string) $setting->smtp_password),
+            $setting->smtp_host,
+            $setting->smtp_port ?: 587,
+        );
     }
 
-    private function buildResendMailer(Setting $setting): Mailer
+    private function mailgunDsn(Setting $setting): string
     {
-        $mailerName = 'dynamic_resend_'.Str::random(8);
+        $dsn = sprintf(
+            'mailgun+api://%s:%s@default',
+            rawurlencode((string) $setting->mailgun_api_key),
+            rawurlencode((string) $setting->mailgun_domain),
+        );
 
-        // The Resend package's client is a container singleton read once
-        // from config('resend.api_key') — force it to rebuild with this
-        // shop's key before the mailer (also freshly named) resolves it.
-        Config::set('resend.api_key', $setting->resend_api_key);
-        app()->forgetInstance(ResendClientContract::class);
+        return $setting->mailgun_region ? $dsn.'?region='.rawurlencode($setting->mailgun_region) : $dsn;
+    }
 
-        Config::set("mail.mailers.{$mailerName}", ['transport' => 'resend']);
+    private function sendgridDsn(Setting $setting): string
+    {
+        return sprintf('sendgrid+api://%s@default', rawurlencode((string) $setting->sendgrid_api_key));
+    }
 
-        return Mail::mailer($mailerName);
+    private function postmarkDsn(Setting $setting): string
+    {
+        return sprintf('postmark+api://%s@default', rawurlencode((string) $setting->postmark_api_key));
+    }
+
+    private function sesDsn(Setting $setting): string
+    {
+        $dsn = sprintf(
+            'ses+api://%s:%s@default',
+            rawurlencode((string) $setting->ses_access_key_id),
+            rawurlencode((string) $setting->ses_secret_access_key),
+        );
+
+        return $dsn.'?region='.rawurlencode($setting->ses_region ?: 'us-east-1');
+    }
+
+    private function resendDsn(Setting $setting): string
+    {
+        return sprintf('resend+api://%s@default', rawurlencode((string) $setting->resend_api_key));
     }
 }
