@@ -76,7 +76,7 @@ class ShopifyGraphQLClient
         $callbackBase = rtrim((string) config('shopify.app_url'), '/');
 
         foreach (config('shopify.webhook_topics') as $topic => $path) {
-            $this->query(<<<'GQL'
+            $body = $this->query(<<<'GQL'
                 mutation webhookSubscriptionCreate($topic: WebhookSubscriptionTopic!, $webhookSubscription: WebhookSubscriptionInput!) {
                     webhookSubscriptionCreate(topic: $topic, webhookSubscription: $webhookSubscription) {
                         userErrors { field message }
@@ -89,7 +89,17 @@ class ShopifyGraphQLClient
                     'callbackUrl' => $callbackBase.$path,
                     'format' => 'JSON',
                 ],
-            ]);
+            ])->json();
+
+            $errors = $body['data']['webhookSubscriptionCreate']['userErrors'] ?? [];
+
+            if (! empty($errors) || ! empty($body['errors'])) {
+                Log::error('Shopify webhook registration failed', [
+                    'shop' => $this->shop->shop_domain,
+                    'topic' => $topic,
+                    'errors' => $errors ?: $body['errors'],
+                ]);
+            }
         }
     }
 }
