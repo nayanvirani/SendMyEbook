@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Page, Card, FormLayout, TextField, Select, Banner, Button, BlockStack, Text, InlineStack } from '@shopify/polaris';
+import { Page, Card, FormLayout, TextField, Select, Banner, Button, BlockStack, Text, InlineStack, Checkbox } from '@shopify/polaris';
 import { api } from '../api';
 
 export default function Settings() {
@@ -20,9 +20,9 @@ export default function Settings() {
         setSaving(true);
         setSaved(false);
         const saved = await api.put('/settings', form);
-        // The password never comes back from the server — don't leave the
+        // Neither secret comes back from the server — don't leave the
         // just-typed value sitting in state implying it's still "unsaved".
-        setForm({ ...saved, smtp_password: '' });
+        setForm({ ...saved, smtp_password: '', resend_api_key: '' });
         setSaving(false);
         setSaved(true);
     }, [form]);
@@ -130,65 +130,122 @@ export default function Settings() {
                         <BlockStack gap="100">
                             <Text as="h2" variant="headingMd">Email delivery</Text>
                             <Text as="p" tone="subdued">
-                                By default, delivery emails are sent from SendMyEbook's own account. Add your own
-                                SMTP provider (Gmail, SendGrid, Mailgun, your own server — any of them) to send
-                                from your own domain instead.
+                                Turn delivery emails off entirely, or choose which provider sends them.
                             </Text>
                         </BlockStack>
 
-                        <FormLayout>
+                        <Checkbox
+                            label="Enable email sending"
+                            helpText={
+                                form.mail_enabled
+                                    ? 'Delivery emails will be sent using the provider selected below.'
+                                    : 'No delivery emails will be sent at all, regardless of provider configuration below.'
+                            }
+                            checked={!!form.mail_enabled}
+                            onChange={field('mail_enabled')}
+                        />
+
+                        <Select
+                            label="Provider"
+                            disabled={!form.mail_enabled}
+                            options={[
+                                { label: "SendMyEbook's own (default, no setup needed)", value: 'platform_default' },
+                                { label: 'Custom SMTP (Gmail, SendGrid, Mailgun, your own server, ...)', value: 'smtp' },
+                                { label: 'Resend (API key, no SMTP setup)', value: 'resend' },
+                            ]}
+                            value={form.mail_provider || 'platform_default'}
+                            onChange={field('mail_provider')}
+                        />
+
+                        {(form.mail_provider || 'platform_default') === 'platform_default' && (
                             <TextField
-                                label="From email address"
+                                label="From email address (optional)"
                                 type="email"
+                                helpText="Overrides the sender name shown to customers; the email still sends through SendMyEbook's own account."
                                 placeholder="downloads@yourstore.com"
                                 value={form.mail_from_address || ''}
                                 onChange={field('mail_from_address')}
                                 autoComplete="off"
                             />
-                            <FormLayout.Group>
+                        )}
+
+                        {form.mail_provider === 'smtp' && (
+                            <FormLayout>
                                 <TextField
-                                    label="SMTP host"
-                                    placeholder="smtp.example.com"
-                                    value={form.smtp_host || ''}
-                                    onChange={field('smtp_host')}
+                                    label="From email address"
+                                    type="email"
+                                    placeholder="downloads@yourstore.com"
+                                    value={form.mail_from_address || ''}
+                                    onChange={field('mail_from_address')}
+                                    autoComplete="off"
+                                />
+                                <FormLayout.Group>
+                                    <TextField
+                                        label="SMTP host"
+                                        placeholder="smtp.example.com"
+                                        value={form.smtp_host || ''}
+                                        onChange={field('smtp_host')}
+                                        autoComplete="off"
+                                    />
+                                    <TextField
+                                        label="Port"
+                                        type="number"
+                                        placeholder="587"
+                                        value={String(form.smtp_port ?? '')}
+                                        onChange={field('smtp_port')}
+                                        autoComplete="off"
+                                    />
+                                </FormLayout.Group>
+                                <FormLayout.Group>
+                                    <TextField
+                                        label="Username"
+                                        value={form.smtp_username || ''}
+                                        onChange={field('smtp_username')}
+                                        autoComplete="off"
+                                    />
+                                    <TextField
+                                        label="Password"
+                                        type="password"
+                                        placeholder={form.has_smtp_password ? 'Saved — leave blank to keep it' : ''}
+                                        value={form.smtp_password || ''}
+                                        onChange={field('smtp_password')}
+                                        autoComplete="off"
+                                    />
+                                </FormLayout.Group>
+                                <Select
+                                    label="Encryption"
+                                    options={[
+                                        { label: 'None', value: '' },
+                                        { label: 'TLS', value: 'tls' },
+                                        { label: 'SSL', value: 'ssl' },
+                                    ]}
+                                    value={form.smtp_encryption || ''}
+                                    onChange={field('smtp_encryption')}
+                                />
+                            </FormLayout>
+                        )}
+
+                        {form.mail_provider === 'resend' && (
+                            <FormLayout>
+                                <TextField
+                                    label="From email address"
+                                    type="email"
+                                    helpText="Must be on a domain verified in your Resend account."
+                                    placeholder="downloads@yourstore.com"
+                                    value={form.mail_from_address || ''}
+                                    onChange={field('mail_from_address')}
                                     autoComplete="off"
                                 />
                                 <TextField
-                                    label="Port"
-                                    type="number"
-                                    placeholder="587"
-                                    value={String(form.smtp_port ?? '')}
-                                    onChange={field('smtp_port')}
-                                    autoComplete="off"
-                                />
-                            </FormLayout.Group>
-                            <FormLayout.Group>
-                                <TextField
-                                    label="Username"
-                                    value={form.smtp_username || ''}
-                                    onChange={field('smtp_username')}
-                                    autoComplete="off"
-                                />
-                                <TextField
-                                    label="Password"
+                                    label="Resend API key"
                                     type="password"
-                                    placeholder={form.has_smtp_password ? 'Saved — leave blank to keep it' : ''}
-                                    value={form.smtp_password || ''}
-                                    onChange={field('smtp_password')}
+                                    placeholder={form.has_resend_api_key ? 'Saved — leave blank to keep it' : 're_...'}
+                                    value={form.resend_api_key || ''}
+                                    onChange={field('resend_api_key')}
                                     autoComplete="off"
                                 />
-                            </FormLayout.Group>
-                            <Select
-                                label="Encryption"
-                                options={[
-                                    { label: 'None', value: '' },
-                                    { label: 'TLS', value: 'tls' },
-                                    { label: 'SSL', value: 'ssl' },
-                                ]}
-                                value={form.smtp_encryption || ''}
-                                onChange={field('smtp_encryption')}
-                            />
-                        </FormLayout>
+                            </FormLayout>
+                        )}
 
                         <InlineStack gap="200" blockAlign="end">
                             <TextField

@@ -20,28 +20,28 @@ class Setting extends Model
         'default_expiration_days',
         'logo_url',
         'brand_color',
+        'mail_enabled',
+        'mail_provider',
         'mail_from_address',
         'smtp_host',
         'smtp_port',
         'smtp_username',
         'smtp_password',
         'smtp_encryption',
+        'resend_api_key',
     ];
 
     protected function casts(): array
     {
         return [
+            'mail_enabled' => 'boolean',
             'smtp_password' => 'encrypted',
+            'resend_api_key' => 'encrypted',
         ];
     }
 
     public function shop(): BelongsTo
     {
         return $this->belongsTo(Shop::class);
-    }
-
-    public function hasCustomMailer(): bool
-    {
-        return filled($this->smtp_host) && filled($this->smtp_port);
     }
 }

@@ -42,9 +42,15 @@ class SendDigitalDeliveryEmailJob implements ShouldQueue
             'status' => 'queued',
         ]);
 
-        try {
-            $resolved = $resolver->resolve($this->shop);
+        $resolved = $resolver->resolve($this->shop);
 
+        if (! $resolved['enabled']) {
+            $log->update(['status' => 'skipped', 'error_message' => 'Email sending is turned off in Settings.']);
+
+            return;
+        }
+
+        try {
             $resolved['mailer']->to($this->order->customer_email)->send(new DigitalDeliveryMail(
                 $this->shop,
                 $this->order,
