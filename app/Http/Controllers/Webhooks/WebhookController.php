@@ -11,6 +11,7 @@ use App\Models\Shop;
 use App\Models\Subscription;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Handlers for Shopify's topic webhooks (see config/shopify.php for the
@@ -144,14 +145,29 @@ class WebhookController extends Controller
             return response()->json(['status' => 'ignored']);
         }
 
-        Subscription::query()->updateOrCreate(
-            ['shop_id' => $shop->id, 'shopify_charge_id' => $chargeId],
-            [
-                'plan_id' => Plan::query()->where('handle', $planName)->value('id'),
-                'shopify_plan_name' => $planName ?: null,
-                'status' => $status,
-            ]
-        );
+        DB::transaction(function () use ($shop, $chargeId, $planName, $status) {
+            Subscription::query()->updateOrCreate(
+                ['shop_id' => $shop->id, 'shopify_charge_id' => $chargeId],
+                [
+                    'plan_id' => Plan::query()->where('handle', $planName)->value('id'),
+                    'shopify_plan_name' => $planName ?: null,
+                    'status' => $status,
+                ]
+            );
+
+            // Shopify only ever has one subscription active per shop — when
+            // this one activates, any other row still marked active is a
+            // stale prior plan (a switch that never got its own "cancelled"
+            // webhook, or arrived out of order) and must not keep gating
+            // the app as if it were current.
+            if ($status === 'active') {
+                Subscription::query()
+                    ->where('shop_id', $shop->id)
+                    ->where('shopify_charge_id', '!=', $chargeId)
+                    ->where('status', 'active')
+                    ->update(['status' => 'cancelled']);
+            }
+        });
 
         return response()->json(['status' => 'accepted']);
     }
