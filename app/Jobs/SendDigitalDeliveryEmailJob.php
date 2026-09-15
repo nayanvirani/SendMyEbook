@@ -7,10 +7,10 @@ use App\Models\DownloadToken;
 use App\Models\EmailLog;
 use App\Models\Order;
 use App\Models\Shop;
+use App\Services\Mail\ShopMailerResolver;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Mail;
 use Throwable;
 
 class SendDigitalDeliveryEmailJob implements ShouldQueue
@@ -28,7 +28,7 @@ class SendDigitalDeliveryEmailJob implements ShouldQueue
         public Collection $downloadTokens,
     ) {}
 
-    public function handle(): void
+    public function handle(ShopMailerResolver $resolver): void
     {
         if (! $this->order->customer_email) {
             return;
@@ -43,8 +43,15 @@ class SendDigitalDeliveryEmailJob implements ShouldQueue
         ]);
 
         try {
-            Mail::to($this->order->customer_email)
-                ->send(new DigitalDeliveryMail($this->shop, $this->order, $this->downloadTokens));
+            $resolved = $resolver->resolve($this->shop);
+
+            $resolved['mailer']->to($this->order->customer_email)->send(new DigitalDeliveryMail(
+                $this->shop,
+                $this->order,
+                $this->downloadTokens,
+                $resolved['fromAddress'],
+                $resolved['fromName'],
+            ));
 
             $log->update(['status' => 'sent', 'sent_at' => now()]);
         } catch (Throwable $e) {

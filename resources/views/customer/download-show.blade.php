@@ -24,7 +24,7 @@
         @foreach ($files as $file)
             <div class="file">
                 <span>{{ $file->original_filename }}</span>
-                <a class="btn" href="{{ route('customer.downloads.file', ['token' => $downloadToken->token, 'file' => $file->id]) }}">Download</a>
+                <a class="btn" target="_blank" rel="noopener" href="{{ route('customer.downloads.file', ['token' => $downloadToken->token, 'file' => $file->id]) }}">Download</a>
             </div>
         @endforeach
 

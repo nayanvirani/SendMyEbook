@@ -19,10 +19,28 @@ class Setting extends Model
         'default_max_downloads',
         'default_expiration_days',
         'logo_url',
+        'mail_from_address',
+        'smtp_host',
+        'smtp_port',
+        'smtp_username',
+        'smtp_password',
+        'smtp_encryption',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'smtp_password' => 'encrypted',
+        ];
+    }
 
     public function shop(): BelongsTo
     {
         return $this->belongsTo(Shop::class);
+    }
+
+    public function hasCustomMailer(): bool
+    {
+        return filled($this->smtp_host) && filled($this->smtp_port);
     }
 }

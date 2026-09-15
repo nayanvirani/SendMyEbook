@@ -21,11 +21,14 @@ class DigitalDeliveryMail extends Mailable
         public Shop $shop,
         public Order $order,
         public Collection $downloadTokens,
+        public string $fromAddress,
+        public string $fromName,
     ) {}
 
     public function build(): self
     {
-        return $this->subject("Your download from {$this->shop->shop_name}")
+        return $this->from($this->fromAddress, $this->fromName)
+            ->subject("Your download from {$this->shop->shop_name}")
             ->markdown('emails.digital-delivery', [
                 'shop' => $this->shop,
                 'order' => $this->order,

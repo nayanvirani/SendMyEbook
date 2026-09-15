@@ -52,6 +52,7 @@ Route::middleware('shopify.session')->group(function () {
 
         Route::get('/settings', [SettingController::class, 'show']);
         Route::put('/settings', [SettingController::class, 'update']);
+        Route::post('/settings/test-email', [SettingController::class, 'testEmail']);
     });
 });
 
