@@ -161,7 +161,7 @@ export default function DigitalProductForm() {
                 setFiles((prev) => [...prev, uploaded]);
             }
         } catch (e) {
-            setError('File upload failed. Please try again.');
+            setError(e.body?.message || 'File upload failed. Please try again.');
         } finally {
             setUploading(false);
         }
@@ -170,6 +170,22 @@ export default function DigitalProductForm() {
     const removeFile = async (fileId) => {
         await api.delete(`/files/${fileId}`);
         setFiles((prev) => prev.filter((f) => f.id !== fileId));
+    };
+
+    const replaceFile = async (fileId, newFile) => {
+        setUploading(true);
+        setError(null);
+        try {
+            // Upload the replacement first, then drop the old record — so a
+            // failed upload never leaves the product with no file at all.
+            const uploaded = await uploadFile(id, newFile);
+            await api.delete(`/files/${fileId}`);
+            setFiles((prev) => [...prev.filter((f) => f.id !== fileId), uploaded]);
+        } catch (e) {
+            setError(e.body?.message || 'Could not replace this file. Please try again.');
+        } finally {
+            setUploading(false);
+        }
     };
 
     return (
@@ -271,10 +287,34 @@ export default function DigitalProductForm() {
                         </DropZone>
                         {files.map((file) => (
                             <InlineStack key={file.id} align="space-between" blockAlign="center">
-                                <Text as="span">{file.original_filename} ({file.status})</Text>
-                                <Button variant="plain" tone="critical" onClick={() => removeFile(file.id)}>
-                                    Remove
-                                </Button>
+                                <BlockStack gap="0">
+                                    <Text as="span">{file.original_filename}</Text>
+                                    <Text as="span" tone="subdued" variant="bodySm">
+                                        {formatBytes(file.size_bytes)} · {file.mime_type} · {file.status}
+                                    </Text>
+                                </BlockStack>
+                                <InlineStack gap="200">
+                                    <Button
+                                        variant="plain"
+                                        disabled={uploading}
+                                        onClick={() => document.getElementById(`replace-${file.id}`).click()}
+                                    >
+                                        Replace
+                                    </Button>
+                                    <input
+                                        id={`replace-${file.id}`}
+                                        type="file"
+                                        hidden
+                                        onChange={(e) => {
+                                            const picked = e.target.files[0];
+                                            e.target.value = '';
+                                            if (picked) replaceFile(file.id, picked);
+                                        }}
+                                    />
+                                    <Button variant="plain" tone="critical" onClick={() => removeFile(file.id)}>
+                                        Remove
+                                    </Button>
+                                </InlineStack>
                             </InlineStack>
                         ))}
                     </BlockStack>
@@ -282,4 +322,11 @@ export default function DigitalProductForm() {
             </BlockStack>
         </Page>
     );
+}
+
+function formatBytes(bytes) {
+    if (!bytes) return '0 KB';
+    const mb = bytes / (1024 * 1024);
+    if (mb >= 1) return `${mb.toFixed(1)} MB`;
+    return `${(bytes / 1024).toFixed(0)} KB`;
 }

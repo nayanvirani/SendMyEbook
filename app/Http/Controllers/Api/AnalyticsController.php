@@ -19,10 +19,17 @@ class AnalyticsController extends Controller
             ->whereHas('downloadToken.digitalProduct', fn ($q) => $q->where('shop_id', $shop->id));
 
         $downloadsByDay = $baseQuery()
-            ->select(DB::raw('DATE(downloaded_at) as date'), DB::raw('COUNT(*) as total'))
+            ->select(DB::raw('DATE(downloaded_at) as period'), DB::raw('COUNT(*) as total'))
             ->where('downloaded_at', '>=', now()->subDays(30))
-            ->groupBy('date')
-            ->orderBy('date')
+            ->groupBy('period')
+            ->orderBy('period')
+            ->get();
+
+        $downloadsByMonth = $baseQuery()
+            ->select(DB::raw("to_char(downloaded_at, 'YYYY-MM') as period"), DB::raw('COUNT(*) as total'))
+            ->where('downloaded_at', '>=', now()->subMonths(12)->startOfMonth())
+            ->groupBy('period')
+            ->orderBy('period')
             ->get();
 
         $topProducts = $shop->digitalProducts()
@@ -33,6 +40,15 @@ class AnalyticsController extends Controller
             ->limit(10)
             ->get(['id', 'shopify_product_title']);
 
+        $downloadsPerOrder = $shop->orders()
+            ->withCount(['downloadTokens as downloads_count' => function ($query) {
+                $query->join('downloads', 'downloads.download_token_id', '=', 'download_tokens.id');
+            }])
+            ->having('downloads_count', '>', 0)
+            ->orderByDesc('downloads_count')
+            ->limit(10)
+            ->get(['id', 'shopify_order_number']);
+
         $recentActivity = $baseQuery()
             ->with(['file', 'downloadToken.order'])
             ->latest('downloaded_at')
@@ -42,13 +58,23 @@ class AnalyticsController extends Controller
         return response()->json([
             'total_downloads' => $baseQuery()->count(),
             'downloads_by_day' => $downloadsByDay,
+            'downloads_by_month' => $downloadsByMonth,
             'top_downloaded_products' => $topProducts,
+            'downloads_per_order' => $downloadsPerOrder,
+            'storage_usage_bytes' => $this->storageUsageBytes($shop),
             'recent_activity' => $recentActivity->map(fn (Download $d) => [
                 'file_name' => $d->file->original_filename,
                 'order_number' => $d->downloadToken->order->shopify_order_number,
                 'downloaded_at' => $d->downloaded_at,
             ]),
         ]);
+    }
+
+    private function storageUsageBytes(Shop $shop): int
+    {
+        return (int) $shop->digitalProducts()
+            ->join('files', 'files.digital_product_id', '=', 'digital_products.id')
+            ->sum('files.size_bytes');
     }
 
     private function shop(Request $request): Shop

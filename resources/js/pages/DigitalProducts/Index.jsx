@@ -1,15 +1,26 @@
 import React, { useEffect, useState } from 'react';
-import { Page, Card, IndexTable, Badge, EmptyState, useIndexResourceState } from '@shopify/polaris';
+import { Page, Card, IndexTable, Badge, EmptyState, useIndexResourceState, InlineStack, TextField, Select, Box } from '@shopify/polaris';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../api';
 
 export default function DigitalProductsIndex() {
     const navigate = useNavigate();
     const [products, setProducts] = useState(null);
+    const [search, setSearch] = useState('');
+    const [status, setStatus] = useState('');
 
     useEffect(() => {
-        api.get('/digital-products').then((res) => setProducts(res.data)).catch(() => setProducts([]));
-    }, []);
+        const params = new URLSearchParams();
+        if (search) params.set('search', search);
+        if (status) params.set('status', status);
+        const query = params.toString();
+
+        const timeout = setTimeout(() => {
+            api.get(`/digital-products${query ? `?${query}` : ''}`).then((res) => setProducts(res.data)).catch(() => setProducts([]));
+        }, 300);
+
+        return () => clearTimeout(timeout);
+    }, [search, status]);
 
     const { selectedResources, allResourcesSelected, handleSelectionChange } = useIndexResourceState(products || []);
 
@@ -19,6 +30,35 @@ export default function DigitalProductsIndex() {
             primaryAction={{ content: 'Add Digital Product', onAction: () => navigate('/digital-products/new') }}
         >
             <Card padding="0">
+                <Box padding="400">
+                    <InlineStack gap="300" align="start">
+                        <div style={{ minWidth: '280px' }}>
+                            <TextField
+                                label="Search"
+                                labelHidden
+                                placeholder="Search by product name"
+                                value={search}
+                                onChange={setSearch}
+                                autoComplete="off"
+                                clearButton
+                                onClearButtonClick={() => setSearch('')}
+                            />
+                        </div>
+                        <div style={{ minWidth: '200px' }}>
+                            <Select
+                                label="Status"
+                                labelHidden
+                                options={[
+                                    { label: 'All statuses', value: '' },
+                                    { label: 'Active', value: 'active' },
+                                    { label: 'Inactive', value: 'inactive' },
+                                ]}
+                                value={status}
+                                onChange={setStatus}
+                            />
+                        </div>
+                    </InlineStack>
+                </Box>
                 {products && products.length === 0 ? (
                     <EmptyState
                         heading="No digital products yet"

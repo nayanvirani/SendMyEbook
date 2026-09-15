@@ -25,12 +25,40 @@ export default function Billing() {
         }
     };
 
+    const usage = status?.usage;
+
     return (
         <Page title="Billing">
             {status?.active && (
                 <Banner tone="success">
                     You're on the {status.plan?.name ?? 'current'} plan. Manage or change it on Shopify.
                 </Banner>
+            )}
+
+            {usage && (
+                <div style={{ marginTop: 'var(--p-space-400)' }}>
+                    <Card>
+                        <BlockStack gap="300">
+                            <Text as="h2" variant="headingMd">Usage</Text>
+                            <InlineGrid columns={{ xs: 1, sm: 2 }} gap="400">
+                                <BlockStack gap="100">
+                                    <Text as="span" tone="subdued">Digital products</Text>
+                                    <Text as="span" variant="headingMd">
+                                        {usage.digital_products.used}
+                                        {usage.digital_products.limit ? ` / ${usage.digital_products.limit}` : ' (unlimited)'}
+                                    </Text>
+                                </BlockStack>
+                                <BlockStack gap="100">
+                                    <Text as="span" tone="subdued">Downloads this month</Text>
+                                    <Text as="span" variant="headingMd">
+                                        {usage.downloads_this_month.used}
+                                        {usage.downloads_this_month.limit ? ` / ${usage.downloads_this_month.limit}` : ' (unlimited)'}
+                                    </Text>
+                                </BlockStack>
+                            </InlineGrid>
+                        </BlockStack>
+                    </Card>
+                </div>
             )}
 
             <div style={{ marginTop: 'var(--p-space-400)' }}>

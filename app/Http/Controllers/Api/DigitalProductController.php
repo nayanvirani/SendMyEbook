@@ -13,10 +13,21 @@ class DigitalProductController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $products = $this->shop($request)->digitalProducts()
+        $query = $this->shop($request)->digitalProducts()
             ->withCount('files')
-            ->latest()
-            ->paginate(20);
+            ->latest();
+
+        if ($search = $request->string('search')->trim()->toString()) {
+            $query->where(fn ($q) => $q
+                ->where('shopify_product_title', 'ilike', "%{$search}%")
+                ->orWhere('shopify_product_id', 'ilike', "%{$search}%"));
+        }
+
+        if ($status = $request->string('status')->trim()->toString()) {
+            $query->where('status', $status);
+        }
+
+        $products = $query->paginate(20)->withQueryString();
 
         return response()->json(DigitalProductResource::collection($products)->response()->getData(true));
     }
@@ -25,6 +36,15 @@ class DigitalProductController extends Controller
     {
         $shop = $this->shop($request);
         $data = $this->validated($request);
+
+        $limit = $shop->activeSubscription?->plan?->max_digital_products;
+
+        if ($limit !== null && $shop->digitalProducts()->count() >= $limit) {
+            return response()->json([
+                'error' => 'plan_limit_reached',
+                'message' => "Your plan allows up to {$limit} digital products. Upgrade to add more.",
+            ], 402);
+        }
 
         $product = $shop->digitalProducts()->create($data);
 

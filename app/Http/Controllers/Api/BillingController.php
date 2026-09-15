@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Download;
 use App\Models\Plan;
 use App\Models\Shop;
 use Illuminate\Http\JsonResponse;
@@ -33,12 +34,36 @@ class BillingController extends Controller
     {
         $shop = $this->shop($request);
         $subscription = $shop->activeSubscription;
+        $plan = $subscription?->plan;
 
         return response()->json([
             'active' => (bool) $subscription,
-            'plan' => $subscription?->plan?->only(['id', 'name', 'handle']),
+            'plan' => $plan?->only(['id', 'name', 'handle']),
             'manage_plan_url' => $this->managePlanUrl($shop),
+            'usage' => $this->usage($shop, $plan),
         ]);
+    }
+
+    /**
+     * @return array{digital_products: array{used: int, limit: ?int}, downloads_this_month: array{used: int, limit: ?int}}
+     */
+    private function usage(Shop $shop, ?Plan $plan): array
+    {
+        $downloadsThisMonth = Download::query()
+            ->whereHas('downloadToken.digitalProduct', fn ($q) => $q->where('shop_id', $shop->id))
+            ->where('downloaded_at', '>=', now()->startOfMonth())
+            ->count();
+
+        return [
+            'digital_products' => [
+                'used' => $shop->digitalProducts()->count(),
+                'limit' => $plan?->max_digital_products,
+            ],
+            'downloads_this_month' => [
+                'used' => $downloadsThisMonth,
+                'limit' => $plan?->max_downloads_per_month,
+            ],
+        ];
     }
 
     private function managePlanUrl(Shop $shop): string
