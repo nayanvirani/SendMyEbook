@@ -13,7 +13,7 @@ class AppSubscriptionsUpdateWebhookTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function post(Shop $shop, array $payload): TestResponse
+    private function postWebhook(Shop $shop, array $payload): TestResponse
     {
         $body = json_encode($payload);
         $hmac = base64_encode(hash_hmac('sha256', $body, (string) config('shopify.api_secret'), true));
@@ -48,7 +48,7 @@ class AppSubscriptionsUpdateWebhookTest extends TestCase
             'status' => 'active',
         ]);
 
-        $response = $this->post($shop, [
+        $response = $this->postWebhook($shop, [
             'app_subscription' => [
                 'admin_graphql_api_id' => 'gid://shopify/AppSubscription/2',
                 'name' => 'pro',
@@ -84,7 +84,7 @@ class AppSubscriptionsUpdateWebhookTest extends TestCase
             'status' => 'active',
         ]);
 
-        $response = $this->post($shop, [
+        $response = $this->postWebhook($shop, [
             'app_subscription' => [
                 'admin_graphql_api_id' => 'gid://shopify/AppSubscription/2',
                 'name' => 'pro',
