@@ -47,6 +47,12 @@ class VerifyShopifySessionToken
 
         if (! $shop || ! $shop->is_active || ! $shop->access_token) {
             $shop = $this->provisionViaTokenExchange($result['shop'], $bearer);
+        } elseif (! $shop->shop_name) {
+            // Installs provisioned before this backfill was added never
+            // got a display name — merchant-facing screens, emails and
+            // download pages all show it, so fill it in on next contact
+            // rather than leaving it blank forever.
+            $this->backfillShopDetails($shop);
         }
 
         $request->attributes->set('shop', $shop);
@@ -78,8 +84,20 @@ class VerifyShopifySessionToken
             ]
         );
 
-        (new ShopifyGraphQLClient($shop))->registerWebhooks();
+        $client = new ShopifyGraphQLClient($shop);
+        $client->registerWebhooks();
+        $this->backfillShopDetails($shop, $client);
 
         return $shop;
+    }
+
+    private function backfillShopDetails(Shop $shop, ?ShopifyGraphQLClient $client = null): void
+    {
+        $details = ($client ?? new ShopifyGraphQLClient($shop))->fetchShopDetails();
+
+        $shop->forceFill([
+            'shop_name' => $details['name'] ?? $shop->shop_name,
+            'email' => $details['email'] ?? $shop->email,
+        ])->save();
     }
 }

@@ -68,6 +68,28 @@ class ShopifyGraphQLClient
     }
 
     /**
+     * @return array{name: ?string, email: ?string}
+     */
+    public function fetchShopDetails(): array
+    {
+        $body = $this->query('{ shop { name email } }')->json();
+
+        if (! empty($body['errors'])) {
+            Log::error('Shopify shop details fetch failed', [
+                'shop' => $this->shop->shop_domain,
+                'errors' => $body['errors'],
+            ]);
+
+            return ['name' => null, 'email' => null];
+        }
+
+        return [
+            'name' => $body['data']['shop']['name'] ?? null,
+            'email' => $body['data']['shop']['email'] ?? null,
+        ];
+    }
+
+    /**
      * Register the webhook topics this app needs (idempotent — Shopify
      * dedupes by callback URL + topic per app).
      */
