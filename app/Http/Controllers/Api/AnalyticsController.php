@@ -18,19 +18,31 @@ class AnalyticsController extends Controller
         $baseQuery = fn () => Download::query()
             ->whereHas('downloadToken.digitalProduct', fn ($q) => $q->where('shop_id', $shop->id));
 
-        $downloadsByDay = $baseQuery()
+        $dailyCounts = $baseQuery()
             ->select(DB::raw('DATE(downloaded_at) as period'), DB::raw('COUNT(*) as total'))
-            ->where('downloaded_at', '>=', now()->subDays(30))
+            ->where('downloaded_at', '>=', now()->subDays(29)->startOfDay())
             ->groupBy('period')
-            ->orderBy('period')
-            ->get();
+            ->pluck('total', 'period');
 
-        $downloadsByMonth = $baseQuery()
+        // A query that only returns days/months with activity renders as
+        // one lone bar filling the whole chart when there's just one —
+        // real time-series charts show the full period with zero-height
+        // gaps, so the frontend needs every day/month represented.
+        $downloadsByDay = collect(range(0, 29))
+            ->map(fn ($i) => now()->subDays(29 - $i)->format('Y-m-d'))
+            ->map(fn ($date) => ['period' => $date, 'total' => (int) ($dailyCounts[$date] ?? 0)])
+            ->values();
+
+        $monthlyCounts = $baseQuery()
             ->select(DB::raw("to_char(downloaded_at, 'YYYY-MM') as period"), DB::raw('COUNT(*) as total'))
-            ->where('downloaded_at', '>=', now()->subMonths(12)->startOfMonth())
+            ->where('downloaded_at', '>=', now()->subMonths(11)->startOfMonth())
             ->groupBy('period')
-            ->orderBy('period')
-            ->get();
+            ->pluck('total', 'period');
+
+        $downloadsByMonth = collect(range(0, 11))
+            ->map(fn ($i) => now()->subMonths(11 - $i)->format('Y-m'))
+            ->map(fn ($month) => ['period' => $month, 'total' => (int) ($monthlyCounts[$month] ?? 0)])
+            ->values();
 
         $topProducts = $shop->digitalProducts()
             ->select('digital_products.id', 'digital_products.shopify_product_title')

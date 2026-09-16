@@ -8,6 +8,7 @@ import {
 } from '@shopify/polaris-icons';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api';
+import { formatBytes } from '../formatBytes';
 
 const FINANCIAL_STATUS_TONE = {
     paid: 'success',
@@ -147,10 +148,4 @@ export default function Dashboard() {
             </Layout>
         </Page>
     );
-}
-
-function formatBytes(bytes) {
-    if (!bytes) return '0 MB';
-    const mb = bytes / (1024 * 1024);
-    return mb >= 1024 ? `${(mb / 1024).toFixed(1)} GB` : `${mb.toFixed(1)} MB`;
 }

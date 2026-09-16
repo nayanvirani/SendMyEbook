@@ -101,6 +101,41 @@ class SettingController extends Controller
     }
 
     /**
+     * Renders the real delivery-email template with this shop's actual
+     * branding (logo, color, support address) plus sample order/product
+     * data, so a merchant can see exactly what a customer receives
+     * without needing a real order or a delivered email.
+     */
+    public function emailPreview(Request $request): JsonResponse
+    {
+        $shop = $this->shop($request);
+        $setting = $shop->setting;
+
+        $sampleOrder = new \stdClass;
+        $sampleOrder->customer_name = 'Jamie';
+        $sampleOrder->shopify_order_number = '1001';
+
+        $html = view('emails.digital-delivery', [
+            'shop' => $shop,
+            'order' => $sampleOrder,
+            'logoUrl' => $setting?->logo_url,
+            'brandColor' => $setting?->brand_color ?: '#008060',
+            'supportEmail' => $setting?->support_email,
+            'downloadLinks' => collect([
+                [
+                    'productTitle' => 'Sample Digital Product',
+                    'url' => '#',
+                    'maxDownloads' => 5,
+                    'expiresAt' => now()->addDays(7),
+                    'licenseKey' => 'SAMPLE-1234-ABCD',
+                ],
+            ]),
+        ])->render();
+
+        return response()->json(['html' => $html]);
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function present(Setting $setting): array

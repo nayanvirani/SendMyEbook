@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Page, Card, FormLayout, TextField, Select, Banner, Button, BlockStack, Text, InlineStack, Checkbox } from '@shopify/polaris';
+import { Page, Card, FormLayout, TextField, Select, Banner, Button, BlockStack, Text, InlineStack, Checkbox, Modal } from '@shopify/polaris';
 import { api } from '../api';
 
 export default function Settings() {
@@ -9,6 +9,8 @@ export default function Settings() {
     const [testEmail, setTestEmail] = useState('');
     const [testing, setTesting] = useState(false);
     const [testResult, setTestResult] = useState(null);
+    const [previewHtml, setPreviewHtml] = useState(null);
+    const [loadingPreview, setLoadingPreview] = useState(false);
 
     useEffect(() => {
         api.get('/settings').then(setForm).catch(() => {});
@@ -42,6 +44,21 @@ export default function Settings() {
             setTesting(false);
         }
     }, [testEmail, handleSave]);
+
+    const handlePreviewEmail = useCallback(async () => {
+        setLoadingPreview(true);
+        try {
+            // Save first so the preview reflects the logo/color/support
+            // email currently typed, not whatever was saved last.
+            await handleSave();
+            const { html } = await api.get('/settings/email-preview');
+            setPreviewHtml(html);
+        } catch (e) {
+            setTestResult({ tone: 'critical', message: 'Could not load the email preview.' });
+        } finally {
+            setLoadingPreview(false);
+        }
+    }, [handleSave]);
 
     if (!form) return null;
 
@@ -385,6 +402,9 @@ export default function Settings() {
                             <Button onClick={handleTestEmail} loading={testing} disabled={!testEmail}>
                                 Send test
                             </Button>
+                            <Button onClick={handlePreviewEmail} loading={loadingPreview}>
+                                Preview email
+                            </Button>
                         </InlineStack>
                         {testResult && (
                             <Banner tone={testResult.tone} onDismiss={() => setTestResult(null)}>
@@ -394,6 +414,23 @@ export default function Settings() {
                     </BlockStack>
                 </Card>
             </BlockStack>
+
+            <Modal
+                open={previewHtml !== null}
+                onClose={() => setPreviewHtml(null)}
+                title="Delivery email preview"
+                size="large"
+            >
+                <Modal.Section flush>
+                    {previewHtml && (
+                        <iframe
+                            title="Email preview"
+                            srcDoc={previewHtml}
+                            style={{ width: '100%', height: '70vh', border: 'none', display: 'block' }}
+                        />
+                    )}
+                </Modal.Section>
+            </Modal>
         </Page>
     );
 }

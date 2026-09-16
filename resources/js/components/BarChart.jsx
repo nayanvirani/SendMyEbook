@@ -13,7 +13,7 @@ export default function BarChart({ data, labelFormatter = (l) => l }) {
 
     return (
         <div>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', height: '160px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', height: '160px', borderBottom: '1px solid #edeef1' }}>
                 {data.map((point, i) => {
                     const heightPct = Math.max(3, (point.total / max) * 100);
                     const isHovered = hovered === i;
@@ -51,8 +51,8 @@ export default function BarChart({ data, labelFormatter = (l) => l }) {
                             )}
                             <div style={{
                                 width: '100%',
-                                height: `${heightPct}%`,
-                                background: isHovered ? '#004c3f' : '#008060',
+                                height: point.total > 0 ? `${heightPct}%` : '4px',
+                                background: point.total > 0 ? (isHovered ? '#004c3f' : '#008060') : (isHovered ? '#d1d5db' : '#eef0f3'),
                                 borderRadius: '3px 3px 0 0',
                                 transition: 'background .1s ease',
                             }} />
