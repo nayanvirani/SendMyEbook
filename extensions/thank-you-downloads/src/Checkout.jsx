@@ -9,6 +9,14 @@ export default async () => {
     render(<Extension />, document.body);
 };
 
+// The order webhook → queue job → DownloadToken creation pipeline is
+// asynchronous and this page renders almost immediately after checkout
+// completes, so the first fetch can easily race ahead of that pipeline
+// and see no download tokens yet even though the order is entirely
+// legitimate. Retry a few times with a short wait rather than treating
+// an empty result as final on the very first try.
+const RETRY_DELAYS_MS = [1500, 1500, 2000, 2000, 3000];
+
 function Extension() {
     const [downloads, setDownloads] = useState(null);
 
@@ -27,19 +35,28 @@ function Extension() {
         }
 
         const numericOrderId = String(orderId).split('/').pop();
-        const token = await shopify.sessionToken.get();
 
-        const response = await fetch(`${APP_URL}/api/storefront/orders/${numericOrderId}/downloads`, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
+        for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+            const token = await shopify.sessionToken.get();
 
-        if (!response.ok) {
-            setDownloads([]);
-            return;
+            const response = await fetch(`${APP_URL}/api/storefront/orders/${numericOrderId}/downloads`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+
+            if (response.ok) {
+                const body = await response.json();
+
+                if (body.downloads?.length > 0 || attempt === RETRY_DELAYS_MS.length) {
+                    setDownloads(body.downloads || []);
+                    return;
+                }
+            } else if (attempt === RETRY_DELAYS_MS.length) {
+                setDownloads([]);
+                return;
+            }
+
+            await new Promise((resolve) => setTimeout(resolve, RETRY_DELAYS_MS[attempt]));
         }
-
-        const body = await response.json();
-        setDownloads(body.downloads || []);
     }
 
     // Nothing to show yet, or this order has no digital products at all —
