@@ -84,6 +84,37 @@ class WebhookController extends Controller
         return response()->json(['status' => 'accepted']);
     }
 
+    /**
+     * Shopify sends this on a hard order deletion — a different topic
+     * from orders/updated, which never reflects deletion (only fields
+     * like cancelled_at/financial_status on an order that still exists).
+     * The order no longer exists in Shopify at all, so download access
+     * is revoked unconditionally here, unlike refunds — the merchant's
+     * per-product "revoke on refund" setting is about refunds
+     * specifically and shouldn't gate this. The local Order/Download
+     * rows are kept (not deleted) so the activity stays auditable, same
+     * as every other access-revoking event in this app.
+     */
+    public function ordersDelete(Request $request): JsonResponse
+    {
+        $shop = $this->resolveShop($request);
+        $payload = $request->json()->all();
+
+        $order = Order::query()
+            ->where('shop_id', $shop->id)
+            ->where('shopify_order_id', (string) $payload['id'])
+            ->first();
+
+        if ($order) {
+            $order->downloadTokens()
+                ->where('status', '!=', 'revoked')
+                ->get()
+                ->each(fn ($token) => $token->revoke('order_deleted'));
+        }
+
+        return response()->json(['status' => 'accepted']);
+    }
+
     public function appUninstalled(Request $request): JsonResponse
     {
         $shop = $this->resolveShop($request);

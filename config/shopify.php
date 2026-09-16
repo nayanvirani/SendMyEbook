@@ -48,6 +48,7 @@ return [
     'webhook_topics' => [
         'orders/paid' => '/api/webhooks/orders-paid',
         'orders/updated' => '/api/webhooks/orders-updated',
+        'orders/delete' => '/api/webhooks/orders-delete',
         'refunds/create' => '/api/webhooks/refunds-create',
         'app/uninstalled' => '/api/webhooks/app-uninstalled',
     ],
