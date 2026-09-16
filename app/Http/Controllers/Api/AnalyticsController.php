@@ -40,14 +40,18 @@ class AnalyticsController extends Controller
             ->limit(10)
             ->get(['id', 'shopify_product_title']);
 
+        // Postgres can't reference a withCount() subquery alias in HAVING
+        // (unlike ORDER BY, which works fine on the same alias below), so
+        // the zero-download filter happens in PHP after fetching instead.
         $downloadsPerOrder = $shop->orders()
             ->withCount(['downloadTokens as downloads_count' => function ($query) {
                 $query->join('downloads', 'downloads.download_token_id', '=', 'download_tokens.id');
             }])
-            ->having('downloads_count', '>', 0)
             ->orderByDesc('downloads_count')
             ->limit(10)
-            ->get(['id', 'shopify_order_number']);
+            ->get(['id', 'shopify_order_number'])
+            ->filter(fn ($order) => $order->downloads_count > 0)
+            ->values();
 
         $recentActivity = $baseQuery()
             ->with(['file', 'downloadToken.order'])
