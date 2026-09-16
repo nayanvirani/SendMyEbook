@@ -149,7 +149,7 @@
                         <div class="file-icon" style="background: {{ $color }};">{{ Str::limit($ext, 4, '') }}</div>
                         <div class="file-info">
                             <div class="file-name">{{ $file->original_filename }}</div>
-                            <div class="file-size">{{ $file->size_bytes ? number_format($file->size_bytes / 1048576, 1).' MB' : '' }}</div>
+                            <div class="file-size">{{ $file->formattedSize() }}</div>
                         </div>
                         <a class="btn" target="_blank" rel="noopener" href="{{ route('customer.downloads.file', ['token' => $downloadToken->token, 'file' => $file->id]) }}">
                             <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a1 1 0 0 1 1 1v8.586l2.293-2.293a1 1 0 1 1 1.414 1.414l-4 4a1 1 0 0 1-1.414 0l-4-4a1 1 0 1 1 1.414-1.414L9 11.586V3a1 1 0 0 1 1-1Z"/><path d="M4 15a1 1 0 0 1 1 1v1h10v-1a1 1 0 1 1 2 0v2a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1Z"/></svg>
