@@ -30,7 +30,13 @@ class ShopifyGraphQLClient
             'Content-Type' => 'application/json',
         ])->post("https://{$this->shop->shop_domain}/admin/api/{$version}/graphql.json", [
             'query' => $query,
-            'variables' => $variables,
+            // An empty PHP array json-encodes as `[]`, and Shopify's
+            // GraphQL endpoint rejects that as "Invalid variables
+            // parameter" for a query with no variable placeholders — it
+            // wants `{}` (or the key omitted). Every other caller happens
+            // to pass real variables, so this stayed latent until the
+            // first no-variables query.
+            'variables' => $variables ?: new \stdClass,
         ]);
     }
 
