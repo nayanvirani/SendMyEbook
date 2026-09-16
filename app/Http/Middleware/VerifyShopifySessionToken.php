@@ -46,6 +46,19 @@ class VerifyShopifySessionToken
         $shop = Shop::query()->where('shop_domain', $result['shop'])->first();
 
         if (! $shop || ! $shop->is_active || ! $shop->access_token) {
+            // A verified token resolving to a shop that's supposedly
+            // unknown/inactive/tokenless on a route other than the
+            // embedded admin shell itself (e.g. a storefront extension
+            // call) is unexpected enough to be worth knowing about —
+            // this branch re-runs Token Exchange and webhook
+            // registration, which shouldn't normally happen for an
+            // already-installed shop.
+            Log::info('Re-provisioning an existing shop via Token Exchange', [
+                'shop_domain' => $result['shop'],
+                'path' => $request->path(),
+                'existing_shop_row_found' => (bool) $shop,
+            ]);
+
             $shop = $this->provisionViaTokenExchange($result['shop'], $bearer);
         } elseif (! $shop->shop_name) {
             // Installs provisioned before this backfill was added never
