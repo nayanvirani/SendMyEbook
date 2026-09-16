@@ -21,6 +21,8 @@ class OrderResource extends JsonResource
             'total_price' => $this->total_price,
             'currency' => $this->currency,
             'is_refunded' => $this->is_refunded,
+            'is_cancelled' => $this->is_cancelled,
+            'is_closed' => $this->is_closed,
             'download_tokens' => $this->whenLoaded('downloadTokens', fn () => $this->downloadTokens->map(fn ($token) => [
                 'id' => $token->id,
                 'digital_product_title' => $token->digitalProduct->shopify_product_title,

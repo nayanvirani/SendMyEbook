@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Page, Card, IndexTable, Badge, EmptyState, BlockStack, Text } from '@shopify/polaris';
+import { Page, Card, IndexTable, Badge, EmptyState, BlockStack, InlineStack, Text } from '@shopify/polaris';
 import { api } from '../api';
 
 const STATUS_TONE = {
@@ -57,9 +57,13 @@ export default function Orders() {
                                     <IndexTable.Cell>#{order.shopify_order_number}</IndexTable.Cell>
                                     <IndexTable.Cell>{order.customer_email ?? '—'}</IndexTable.Cell>
                                     <IndexTable.Cell>
-                                        <Badge tone={order.is_refunded ? 'critical' : 'success'}>
-                                            {order.financial_status ?? 'unknown'}
-                                        </Badge>
+                                        <InlineStack gap="100">
+                                            <Badge tone={order.is_refunded ? 'critical' : 'success'}>
+                                                {order.financial_status ?? 'unknown'}
+                                            </Badge>
+                                            {order.is_cancelled && <Badge tone="critical">Cancelled</Badge>}
+                                            {order.is_closed && <Badge tone="subdued">Archived</Badge>}
+                                        </InlineStack>
                                     </IndexTable.Cell>
                                     <IndexTable.Cell>{order.currency} {order.total_price}</IndexTable.Cell>
                                     <IndexTable.Cell>

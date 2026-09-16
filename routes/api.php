@@ -69,6 +69,7 @@ Route::middleware('shopify.session')->group(function () {
 Route::middleware('shopify.webhook')->group(function () {
     Route::post('/webhooks/orders-paid', [WebhookController::class, 'ordersPaid']);
     Route::post('/webhooks/orders-updated', [WebhookController::class, 'ordersUpdated']);
+    Route::post('/webhooks/orders-cancelled', [WebhookController::class, 'ordersCancelled']);
     Route::post('/webhooks/orders-delete', [WebhookController::class, 'ordersDelete']);
     Route::post('/webhooks/refunds-create', [WebhookController::class, 'refundsCreate']);
     Route::post('/webhooks/app-uninstalled', [WebhookController::class, 'appUninstalled']);

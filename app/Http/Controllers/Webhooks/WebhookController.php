@@ -56,13 +56,50 @@ class WebhookController extends Controller
         $shop = $this->resolveShop($request);
         $payload = $request->json()->all();
 
+        // Archiving an order (closed_at set) is a merchant workflow status,
+        // not a cancellation or refund — a paid, fulfilled, archived order
+        // is the normal happy path and must not revoke anything. Tracked
+        // here purely for visibility. Cancellation (cancelled_at set) DOES
+        // revoke access, same as this app's other order-invalidating
+        // events — but only once, via the dedicated orders/cancelled
+        // handler below; this just keeps the flag in sync if an update
+        // arrives that already reflects a cancellation made elsewhere.
         Order::query()
             ->where('shop_id', $shop->id)
             ->where('shopify_order_id', (string) $payload['id'])
             ->update([
                 'financial_status' => $payload['financial_status'] ?? null,
+                'is_cancelled' => filled($payload['cancelled_at'] ?? null),
+                'is_closed' => filled($payload['closed_at'] ?? null),
                 'raw_payload' => $payload,
             ]);
+
+        return response()->json(['status' => 'accepted']);
+    }
+
+    /**
+     * A cancelled order is no longer a legitimate sale — unlike the
+     * merchant's per-product "revoke on refund" setting (which is about
+     * refunds specifically, and optional), cancellation revokes download
+     * access unconditionally, same reasoning as a hard delete. Cancelling
+     * does not by itself delete or refund the order, so this is the only
+     * signal for it — orders/updated reflects the resulting cancelled_at
+     * field, but this dedicated topic is what actually fires the action.
+     */
+    public function ordersCancelled(Request $request): JsonResponse
+    {
+        $shop = $this->resolveShop($request);
+        $payload = $request->json()->all();
+
+        $order = Order::query()
+            ->where('shop_id', $shop->id)
+            ->where('shopify_order_id', (string) $payload['id'])
+            ->first();
+
+        if ($order) {
+            $order->update(['is_cancelled' => true]);
+            $this->revokeDownloadsForOrder($order, 'order_cancelled');
+        }
 
         return response()->json(['status' => 'accepted']);
     }
@@ -106,13 +143,18 @@ class WebhookController extends Controller
             ->first();
 
         if ($order) {
-            $order->downloadTokens()
-                ->where('status', '!=', 'revoked')
-                ->get()
-                ->each(fn ($token) => $token->revoke('order_deleted'));
+            $this->revokeDownloadsForOrder($order, 'order_deleted');
         }
 
         return response()->json(['status' => 'accepted']);
+    }
+
+    private function revokeDownloadsForOrder(Order $order, string $reason): void
+    {
+        $order->downloadTokens()
+            ->where('status', '!=', 'revoked')
+            ->get()
+            ->each(fn ($token) => $token->revoke($reason));
     }
 
     public function appUninstalled(Request $request): JsonResponse

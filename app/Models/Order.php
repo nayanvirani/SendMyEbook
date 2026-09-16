@@ -23,6 +23,8 @@ class Order extends Model
         'total_price',
         'currency',
         'is_refunded',
+        'is_cancelled',
+        'is_closed',
         'raw_payload',
     ];
 
@@ -31,6 +33,8 @@ class Order extends Model
         return [
             'total_price' => 'decimal:2',
             'is_refunded' => 'boolean',
+            'is_cancelled' => 'boolean',
+            'is_closed' => 'boolean',
             'raw_payload' => 'array',
         ];
     }
