@@ -17,7 +17,9 @@ function Extension() {
     }, []);
 
     async function loadDownloads() {
-        const orderId = shopify.orderConfirmation?.value?.id;
+        // orderConfirmation.value is { order: { id }, number, isFirstOrder }
+        // — the order id is nested under `order`, not on the value itself.
+        const orderId = shopify.orderConfirmation?.value?.order?.id;
 
         if (!orderId) {
             setDownloads([]);
