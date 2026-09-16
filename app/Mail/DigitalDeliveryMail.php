@@ -27,12 +27,16 @@ class DigitalDeliveryMail extends Mailable
 
     public function build(): self
     {
+        $setting = $this->shop->setting;
+
         return $this->from($this->fromAddress, $this->fromName)
             ->subject("Your download from {$this->shop->shop_name}")
-            ->markdown('emails.digital-delivery', [
+            ->view('emails.digital-delivery', [
                 'shop' => $this->shop,
                 'order' => $this->order,
-                'logoUrl' => $this->shop->setting?->logo_url,
+                'logoUrl' => $setting?->logo_url,
+                'brandColor' => $setting?->brand_color ?: '#008060',
+                'supportEmail' => $setting?->support_email,
                 'downloadLinks' => $this->downloadTokens->map(fn ($token) => [
                     'productTitle' => $token->digitalProduct->shopify_product_title,
                     'url' => route('customer.downloads.show', ['token' => $token->token]),

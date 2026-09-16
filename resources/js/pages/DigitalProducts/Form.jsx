@@ -13,6 +13,7 @@ import {
     DropZone,
     Banner,
     Thumbnail,
+    Badge,
 } from '@shopify/polaris';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../../api';
@@ -287,12 +288,17 @@ export default function DigitalProductForm() {
                         </DropZone>
                         {files.map((file) => (
                             <InlineStack key={file.id} align="space-between" blockAlign="center">
-                                <BlockStack gap="0">
-                                    <Text as="span">{file.original_filename}</Text>
-                                    <Text as="span" tone="subdued" variant="bodySm">
-                                        {formatBytes(file.size_bytes)} · {file.mime_type} · {file.status}
-                                    </Text>
-                                </BlockStack>
+                                <InlineStack gap="200" blockAlign="center">
+                                    <BlockStack gap="0">
+                                        <Text as="span">{file.original_filename}</Text>
+                                        <Text as="span" tone="subdued" variant="bodySm">
+                                            {formatBytes(file.size_bytes)} · {file.mime_type}
+                                        </Text>
+                                    </BlockStack>
+                                    <Badge tone={file.status === 'ready' ? 'success' : 'attention'}>
+                                        {file.status === 'ready' ? 'Ready' : 'Pending'}
+                                    </Badge>
+                                </InlineStack>
                                 <InlineStack gap="200">
                                     <Button
                                         variant="plain"
