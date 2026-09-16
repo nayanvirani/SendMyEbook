@@ -26,12 +26,13 @@ class DashboardController extends Controller
         ]);
 
         $topProducts = $shop->digitalProducts()
+            ->select('digital_products.id', 'digital_products.shopify_product_title')
             ->withCount(['downloadTokens as downloads_count' => function ($query) {
                 $query->join('downloads', 'downloads.download_token_id', '=', 'download_tokens.id');
             }])
             ->orderByDesc('downloads_count')
             ->limit(5)
-            ->get(['id', 'shopify_product_title']);
+            ->get();
 
         return response()->json([
             'total_digital_products' => $totalDigitalProducts,

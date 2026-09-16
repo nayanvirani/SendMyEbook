@@ -33,23 +33,30 @@ class AnalyticsController extends Controller
             ->get();
 
         $topProducts = $shop->digitalProducts()
+            ->select('digital_products.id', 'digital_products.shopify_product_title')
             ->withCount(['downloadTokens as downloads_count' => function ($query) {
                 $query->join('downloads', 'downloads.download_token_id', '=', 'download_tokens.id');
             }])
             ->orderByDesc('downloads_count')
             ->limit(10)
-            ->get(['id', 'shopify_product_title']);
+            ->get();
 
         // Postgres can't reference a withCount() subquery alias in HAVING
         // (unlike ORDER BY, which works fine on the same alias below), so
         // the zero-download filter happens in PHP after fetching instead.
+        // withCount() also overrides an explicit get([...]) column list
+        // (it already sets $query->columns, so the "once" column
+        // restriction never applies) — select explicitly beforehand so
+        // the response doesn't carry the full Order row (customer PII,
+        // raw Shopify payload) for a widget that only needs two fields.
         $downloadsPerOrder = $shop->orders()
+            ->select('orders.id', 'orders.shopify_order_number')
             ->withCount(['downloadTokens as downloads_count' => function ($query) {
                 $query->join('downloads', 'downloads.download_token_id', '=', 'download_tokens.id');
             }])
             ->orderByDesc('downloads_count')
             ->limit(10)
-            ->get(['id', 'shopify_order_number'])
+            ->get()
             ->filter(fn ($order) => $order->downloads_count > 0)
             ->values();
 
