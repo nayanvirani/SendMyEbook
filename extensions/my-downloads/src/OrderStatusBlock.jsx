@@ -17,10 +17,16 @@ export default async () => {
 const RETRY_DELAYS_MS = [1500, 1500, 2000, 2000, 3000];
 
 function Extension() {
-    const [downloads, setDownloads] = useState(null);
+    // 'checking' while retries are still in flight, 'ready' once real
+    // downloads are found, 'empty' once every retry is exhausted with
+    // nothing — every order (including ones with no digital product at
+    // all) passes through 'checking' first, since there's no way to
+    // know in advance whether this one will end up having downloads.
+    const [status, setStatus] = useState('checking');
+    const [downloads, setDownloads] = useState([]);
 
     useEffect(() => {
-        loadDownloads().catch(() => setDownloads([]));
+        loadDownloads().catch(() => setStatus('empty'));
     }, []);
 
     async function loadDownloads() {
@@ -32,7 +38,7 @@ function Extension() {
         const orderId = shopify.order?.value?.id ?? shopify.orderConfirmation?.value?.order?.id;
 
         if (!orderId) {
-            setDownloads([]);
+            setStatus('empty');
             return;
         }
 
@@ -48,12 +54,18 @@ function Extension() {
             if (response.ok) {
                 const body = await response.json();
 
-                if (body.downloads?.length > 0 || attempt === RETRY_DELAYS_MS.length) {
-                    setDownloads(body.downloads || []);
+                if (body.downloads?.length > 0) {
+                    setDownloads(body.downloads);
+                    setStatus('ready');
+                    return;
+                }
+
+                if (attempt === RETRY_DELAYS_MS.length) {
+                    setStatus('empty');
                     return;
                 }
             } else if (attempt === RETRY_DELAYS_MS.length) {
-                setDownloads([]);
+                setStatus('empty');
                 return;
             }
 
@@ -61,8 +73,19 @@ function Extension() {
         }
     }
 
-    if (downloads === null || downloads.length === 0) {
+    if (status === 'empty') {
         return null;
+    }
+
+    if (status === 'checking') {
+        return (
+            <s-banner>
+                <s-stack direction="inline" gap="tight" alignItems="center">
+                    <s-spinner size="small" accessibilityLabel="Preparing your download" />
+                    <s-text>Your digital download is being prepared — hang tight…</s-text>
+                </s-stack>
+            </s-banner>
+        );
     }
 
     return (

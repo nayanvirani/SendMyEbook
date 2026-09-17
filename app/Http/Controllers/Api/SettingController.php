@@ -82,7 +82,7 @@ class SettingController extends Controller
 
         try {
             $mailer = $resolver->buildMailer($setting);
-            $fromAddress = $setting?->mail_from_address ?: (string) config('mail.from.address');
+            $fromAddress = $setting?->mail_from_address ?: $resolver->defaultFromAddress();
             $fromName = $setting?->email_from_name ?: $shop->shop_name;
 
             $mailer->raw(

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\PlanController as AdminPlanController;
+use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
 use App\Http\Controllers\Admin\ShopController as AdminShopController;
 use App\Http\Controllers\Admin\SubscriptionController as AdminSubscriptionController;
 use App\Http\Controllers\AuthController;
@@ -47,6 +48,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/shops/{shop}/toggle-active', [AdminShopController::class, 'toggleActive'])->name('shops.toggle-active');
 
         Route::get('/subscriptions', [AdminSubscriptionController::class, 'index'])->name('subscriptions.index');
+
+        Route::get('/settings', [AdminSettingsController::class, 'edit'])->name('settings.edit');
+        Route::put('/settings', [AdminSettingsController::class, 'update'])->name('settings.update');
+        Route::post('/settings/test-email', [AdminSettingsController::class, 'sendTest'])->name('settings.test-email');
     });
 });
 
