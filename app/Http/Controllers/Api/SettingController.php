@@ -23,11 +23,15 @@ class SettingController extends Controller
     public function update(Request $request): JsonResponse
     {
         $shop = $this->shop($request);
+        $maxDownloadsCeiling = $shop->currentPlan()?->max_downloads_per_product;
 
         $data = $request->validate([
             'email_from_name' => ['nullable', 'string', 'max:255'],
             'support_email' => ['nullable', 'email'],
-            'default_max_downloads' => ['nullable', 'integer', 'min:1'],
+            'default_max_downloads' => array_filter([
+                'nullable', 'integer', 'min:1',
+                $maxDownloadsCeiling !== null ? "max:{$maxDownloadsCeiling}" : null,
+            ]),
             'default_expiration_days' => ['nullable', 'integer', 'min:1'],
             'logo_url' => ['nullable', 'url'],
             'brand_color' => ['nullable', 'regex:/^#[0-9a-fA-F]{6}$/'],
@@ -48,6 +52,10 @@ class SettingController extends Controller
             'ses_access_key_id' => ['nullable', 'string'],
             'ses_secret_access_key' => ['nullable', 'string'],
             'ses_region' => ['nullable', 'string', 'max:32'],
+        ], [
+            'default_max_downloads.max' => $maxDownloadsCeiling !== null
+                ? "Your plan allows up to {$maxDownloadsCeiling} downloads per product. Upgrade for a higher limit."
+                : null,
         ]);
 
         // None of these secrets round-trip back to the browser (see

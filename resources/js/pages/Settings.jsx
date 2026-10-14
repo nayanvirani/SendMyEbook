@@ -12,10 +12,14 @@ export default function Settings() {
     const [previewHtml, setPreviewHtml] = useState(null);
     const [loadingPreview, setLoadingPreview] = useState(false);
     const [canBrand, setCanBrand] = useState(true);
+    const [maxDownloadsCeiling, setMaxDownloadsCeiling] = useState(null);
 
     useEffect(() => {
         api.get('/settings').then(setForm).catch(() => {});
-        api.get('/subscription-status').then((s) => setCanBrand(!!s.features?.custom_branding)).catch(() => {});
+        api.get('/subscription-status').then((s) => {
+            setCanBrand(!!s.features?.custom_branding);
+            setMaxDownloadsCeiling(s.limits?.max_downloads_per_product ?? null);
+        }).catch(() => {});
     }, []);
 
     const field = (key) => (value) => setForm((f) => ({ ...f, [key]: value }));
@@ -88,6 +92,10 @@ export default function Settings() {
                         <TextField
                             label="Default maximum downloads"
                             type="number"
+                            max={maxDownloadsCeiling || undefined}
+                            helpText={maxDownloadsCeiling
+                                ? `Applied to any product that doesn't set its own limit. Your plan allows up to ${maxDownloadsCeiling}.`
+                                : "Applied to any product that doesn't set its own limit. Leave blank for unlimited."}
                             value={String(form.default_max_downloads ?? '')}
                             onChange={field('default_max_downloads')}
                             autoComplete="off"

@@ -76,6 +76,19 @@
                 <p class="mt-1 text-xs text-gray-500">250 = 250MB, 10240 = 10GB.</p>
             </div>
             <div>
+                <label for="max_downloads_per_product" class="block text-sm font-medium text-gray-700">Max downloads per product</label>
+                <input
+                    id="max_downloads_per_product" name="max_downloads_per_product" type="number" min="1"
+                    value="{{ old('max_downloads_per_product', $plan->max_downloads_per_product) }}"
+                    placeholder="Leave blank = unlimited"
+                    class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                >
+                <p class="mt-1 text-xs text-gray-500">The ceiling a store owner's own download-limit settings can't exceed, on this plan.</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div>
                 <label for="trial_days" class="block text-sm font-medium text-gray-700">Free trial (days)</label>
                 <input
                     id="trial_days" name="trial_days" type="number" min="1"

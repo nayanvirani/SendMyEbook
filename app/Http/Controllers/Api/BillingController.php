@@ -47,6 +47,10 @@ class BillingController extends Controller
                 'download_analytics' => (bool) $plan?->hasFeature('download_analytics'),
                 'priority_support' => (bool) $plan?->hasFeature('priority_support'),
             ],
+            'limits' => [
+                'max_downloads_per_product' => $plan?->max_downloads_per_product,
+                'max_file_size_mb' => $plan?->max_file_size_mb,
+            ],
         ]);
     }
 

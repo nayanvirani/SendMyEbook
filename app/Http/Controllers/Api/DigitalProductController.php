@@ -35,7 +35,7 @@ class DigitalProductController extends Controller
     public function store(Request $request): JsonResponse
     {
         $shop = $this->shop($request);
-        $data = $this->validated($request);
+        $data = $this->validated($request, $shop);
 
         $limit = $shop->currentPlan()?->max_digital_products;
 
@@ -65,7 +65,7 @@ class DigitalProductController extends Controller
     public function update(Request $request, DigitalProduct $digitalProduct): JsonResponse
     {
         $this->authorizeShop($request, $digitalProduct);
-        $data = $this->validated($request, $digitalProduct);
+        $data = $this->validated($request, $this->shop($request), $digitalProduct);
 
         if ($error = $this->watermarkFeatureError($this->shop($request), $data, $digitalProduct)) {
             return $error;
@@ -88,20 +88,29 @@ class DigitalProductController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function validated(Request $request, ?DigitalProduct $existing = null): array
+    private function validated(Request $request, Shop $shop, ?DigitalProduct $existing = null): array
     {
+        $maxDownloadsCeiling = $shop->currentPlan()?->max_downloads_per_product;
+
         return $request->validate([
             'shopify_product_id' => ['required', 'string'],
             'shopify_product_title' => ['nullable', 'string'],
             'shopify_variant_id' => ['nullable', 'string'],
             'shopify_variant_title' => ['nullable', 'string'],
             'status' => ['sometimes', 'in:active,inactive'],
-            'max_downloads' => ['nullable', 'integer', 'min:1'],
+            'max_downloads' => array_filter([
+                'nullable', 'integer', 'min:1',
+                $maxDownloadsCeiling !== null ? "max:{$maxDownloadsCeiling}" : null,
+            ]),
             'expiration_value' => ['nullable', 'integer', 'min:1'],
             'expiration_unit' => ['sometimes', 'in:hours,days'],
             'revoke_on_refund' => ['sometimes', 'boolean'],
             'requires_license_key' => ['sometimes', 'boolean'],
             'watermark_pdfs' => ['sometimes', 'boolean'],
+        ], [
+            'max_downloads.max' => $maxDownloadsCeiling !== null
+                ? "Your plan allows up to {$maxDownloadsCeiling} downloads per product. Upgrade for a higher limit, or leave it unset to use the maximum your plan allows."
+                : null,
         ]);
     }
 

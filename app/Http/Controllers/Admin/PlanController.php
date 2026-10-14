@@ -84,6 +84,7 @@ class PlanController extends Controller
             'max_digital_products' => ['nullable', 'integer', 'min:1'],
             'max_deliveries_per_month' => ['nullable', 'integer', 'min:1'],
             'max_file_size_mb' => ['nullable', 'integer', 'min:1'],
+            'max_downloads_per_product' => ['nullable', 'integer', 'min:1'],
             'trial_days' => ['nullable', 'integer', 'min:1'],
             'features' => ['nullable', 'array'],
             'features.*' => ['string', 'in:'.implode(',', array_keys(Plan::KNOWN_FEATURES))],

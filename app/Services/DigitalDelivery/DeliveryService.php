@@ -76,11 +76,36 @@ class DeliveryService
             'digital_product_id' => $digitalProduct->id,
             'token' => Str::random(48),
             'license_key' => $digitalProduct->requires_license_key ? $this->generateLicenseKey() : null,
-            'max_downloads' => $digitalProduct->max_downloads,
+            'max_downloads' => $this->effectiveMaxDownloads($digitalProduct),
             'download_count' => 0,
             'expires_at' => $this->calculateExpiry($digitalProduct),
             'status' => 'active',
         ]);
+    }
+
+    /**
+     * Resolution order: the product's own override, else the shop's
+     * store-wide default (Settings → "Default maximum downloads"), else
+     * no limit from either — always bounded by the plan's ceiling. The
+     * merchant's values are validated against that same ceiling when
+     * they're set (see DigitalProductController/SettingController), but
+     * leaving both unset means "unlimited" at the model level, which
+     * would silently bypass the ceiling for any product/shop nobody
+     * ever typed a number into. Re-applying it here, at the point the
+     * limit actually takes effect, closes that gap: null only ever means
+     * truly unlimited when the plan itself has no ceiling either.
+     */
+    private function effectiveMaxDownloads(DigitalProduct $digitalProduct): ?int
+    {
+        $shop = $digitalProduct->shop;
+        $value = $digitalProduct->max_downloads ?? $shop->setting?->default_max_downloads;
+        $planCeiling = $shop->currentPlan()?->max_downloads_per_product;
+
+        return match (true) {
+            $value === null => $planCeiling,
+            $planCeiling === null => $value,
+            default => min($value, $planCeiling),
+        };
     }
 
     /**
@@ -95,16 +120,23 @@ class DeliveryService
             ->implode('-');
     }
 
+    /**
+     * Same fallback order as effectiveMaxDownloads(): the product's own
+     * override, else the shop's store-wide default (Settings → "Default
+     * link expiration"), else the link never expires.
+     */
     private function calculateExpiry(DigitalProduct $digitalProduct): ?Carbon
     {
-        if ($digitalProduct->expiration_value === null) {
-            return null;
+        if ($digitalProduct->expiration_value !== null) {
+            return match ($digitalProduct->expiration_unit) {
+                'hours' => now()->addHours($digitalProduct->expiration_value),
+                default => now()->addDays($digitalProduct->expiration_value),
+            };
         }
 
-        return match ($digitalProduct->expiration_unit) {
-            'hours' => now()->addHours($digitalProduct->expiration_value),
-            default => now()->addDays($digitalProduct->expiration_value),
-        };
+        $defaultDays = $digitalProduct->shop->setting?->default_expiration_days;
+
+        return $defaultDays !== null ? now()->addDays($defaultDays) : null;
     }
 
     /**

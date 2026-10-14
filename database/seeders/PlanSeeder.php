@@ -17,6 +17,7 @@ class PlanSeeder extends Seeder
                 'max_digital_products' => null,
                 'max_deliveries_per_month' => 30,
                 'max_file_size_mb' => 250,
+                'max_downloads_per_product' => 20,
                 'trial_days' => null,
                 'features' => [],
                 'marketing_bullets' => [
@@ -37,6 +38,7 @@ class PlanSeeder extends Seeder
                 'max_digital_products' => null,
                 'max_deliveries_per_month' => null,
                 'max_file_size_mb' => 10240,
+                'max_downloads_per_product' => null,
                 'trial_days' => 14,
                 'features' => ['watermarking', 'custom_branding', 'download_analytics', 'priority_support'],
                 'marketing_bullets' => [

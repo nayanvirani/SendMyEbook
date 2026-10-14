@@ -19,6 +19,7 @@ class Plan extends Model
         'max_digital_products',
         'max_deliveries_per_month',
         'max_file_size_mb',
+        'max_downloads_per_product',
         'trial_days',
         'features',
         'marketing_bullets',

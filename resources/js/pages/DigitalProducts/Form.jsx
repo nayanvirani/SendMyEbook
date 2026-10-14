@@ -54,9 +54,13 @@ export default function DigitalProductForm() {
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState(null);
     const [canWatermark, setCanWatermark] = useState(true);
+    const [maxDownloadsCeiling, setMaxDownloadsCeiling] = useState(null);
 
     useEffect(() => {
-        api.get('/subscription-status').then((s) => setCanWatermark(!!s.features?.watermarking)).catch(() => {});
+        api.get('/subscription-status').then((s) => {
+            setCanWatermark(!!s.features?.watermarking);
+            setMaxDownloadsCeiling(s.limits?.max_downloads_per_product ?? null);
+        }).catch(() => {});
     }, []);
 
     useEffect(() => {
@@ -244,7 +248,10 @@ export default function DigitalProductForm() {
                         <TextField
                             label="Maximum downloads"
                             type="number"
-                            helpText="Leave blank for unlimited."
+                            max={maxDownloadsCeiling || undefined}
+                            helpText={maxDownloadsCeiling
+                                ? `Leave blank to use your account default. Your plan allows up to ${maxDownloadsCeiling}.`
+                                : 'Leave blank for unlimited.'}
                             value={String(form.max_downloads)}
                             onChange={field('max_downloads')}
                             autoComplete="off"
