@@ -26,6 +26,7 @@
                     ['admin.shops.index', 'Shops', '▣'],
                     ['admin.subscriptions.index', 'Subscriptions', '↻'],
                     ['admin.settings.edit', 'Email Settings', '✉'],
+                    ['admin.legal.edit', 'Legal', '§'],
                 ] as [$routeName, $label, $icon])
                     @php $isCurrent = request()->routeIs($routeName.'*'); @endphp
                     <a

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\LegalContentController as AdminLegalContentController;
 use App\Http\Controllers\Admin\PlanController as AdminPlanController;
 use App\Http\Controllers\Admin\RevenueController as AdminRevenueController;
 use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\Admin\SubscriptionController as AdminSubscriptionContro
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Customer\DownloadAccessController;
 use App\Http\Controllers\EmbeddedAppController;
+use App\Models\LegalContent;
 use Illuminate\Support\Facades\Route;
 
 // Shopify OAuth install flow.
@@ -22,7 +24,10 @@ Route::get('/downloads/{token}/files/{file}', [DownloadAccessController::class, 
 
 // Legal pages required by the Shopify Partner Dashboard app listing.
 Route::get('/privacy', function () {
-    return view('legal.privacy', ['lastUpdated' => now()->format('F j, Y')]);
+    return view('legal.privacy', [
+        'content' => LegalContent::current(),
+        'lastUpdated' => now()->format('F j, Y'),
+    ]);
 })->name('legal.privacy');
 
 /*
@@ -55,6 +60,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/settings', [AdminSettingsController::class, 'edit'])->name('settings.edit');
         Route::put('/settings', [AdminSettingsController::class, 'update'])->name('settings.update');
         Route::post('/settings/test-email', [AdminSettingsController::class, 'sendTest'])->name('settings.test-email');
+
+        Route::get('/legal', [AdminLegalContentController::class, 'edit'])->name('legal.edit');
+        Route::put('/legal', [AdminLegalContentController::class, 'update'])->name('legal.update');
     });
 });
 
