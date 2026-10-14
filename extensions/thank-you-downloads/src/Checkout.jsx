@@ -3,7 +3,7 @@ import { render } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 
 // This app's own Laravel backend — not part of the Shopify GraphQL APIs.
-const APP_URL = 'https://sendmyebook-production.up.railway.app';
+const APP_URL = 'https://sendmyebook.convertlylab.com';
 
 export default async () => {
     render(<Extension />, document.body);
