@@ -102,7 +102,7 @@
                             </li>
                             <li class="flex gap-2">
                                 <span>✔</span>
-                                {{ $plan->max_downloads_per_month ? number_format($plan->max_downloads_per_month).' downloads / month' : 'Unlimited downloads' }}
+                                {{ $plan->max_deliveries_per_month ? number_format($plan->max_deliveries_per_month).' deliveries / month' : 'Unlimited deliveries' }}
                             </li>
                             <li class="flex gap-2"><span>✔</span> Automatic email delivery</li>
                             <li class="flex gap-2"><span>✔</span> Download limits &amp; expiration</li>

@@ -3,7 +3,10 @@
 @section('title', 'Plans & Pricing')
 
 @section('content')
-    <div class="mb-6 flex justify-end">
+    <div class="mb-6 flex items-center justify-between">
+        <a href="{{ route('admin.plans.index', $showRetired ? [] : ['retired' => 1]) }}" class="text-sm text-gray-500 hover:underline">
+            {{ $showRetired ? 'Hide retired plans' : 'Show retired plans' }}
+        </a>
         <a href="{{ route('admin.plans.create') }}" class="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500">
             New plan
         </a>
@@ -17,7 +20,7 @@
                     <th class="px-5 py-3 font-medium">Handle</th>
                     <th class="px-5 py-3 font-medium">Price</th>
                     <th class="px-5 py-3 font-medium">Products</th>
-                    <th class="px-5 py-3 font-medium">Downloads / mo</th>
+                    <th class="px-5 py-3 font-medium">Deliveries / mo</th>
                     <th class="px-5 py-3 font-medium">Status</th>
                     <th class="px-5 py-3"></th>
                 </tr>
@@ -29,7 +32,7 @@
                         <td class="px-5 py-3 text-gray-500">{{ $plan->handle }}</td>
                         <td class="px-5 py-3">${{ number_format((float) $plan->price, 2) }}/mo</td>
                         <td class="px-5 py-3">{{ $plan->max_digital_products ?? 'Unlimited' }}</td>
-                        <td class="px-5 py-3">{{ $plan->max_downloads_per_month ?? 'Unlimited' }}</td>
+                        <td class="px-5 py-3">{{ $plan->max_deliveries_per_month ?? 'Unlimited' }}</td>
                         <td class="px-5 py-3">
                             <span class="rounded-full px-2 py-0.5 text-xs font-medium {{ $plan->is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500' }}">
                                 {{ $plan->is_active ? 'Active' : 'Inactive' }}
@@ -37,10 +40,18 @@
                         </td>
                         <td class="px-5 py-3 text-right">
                             <a href="{{ route('admin.plans.edit', $plan) }}" class="font-medium text-emerald-700 hover:underline">Edit</a>
-                            <form method="POST" action="{{ route('admin.plans.destroy', $plan) }}" class="inline" onsubmit="return confirm('Delete this plan?');">
+                            @php $hasHistory = $plan->subscriptions_count > 0; @endphp
+                            <form
+                                method="POST"
+                                action="{{ route('admin.plans.destroy', $plan) }}"
+                                class="inline"
+                                onsubmit="return confirm('{{ $hasHistory ? 'This plan has subscription history and can\'t be deleted — deactivate and hide it instead?' : 'Delete this plan?' }}');"
+                            >
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="ml-3 font-medium text-red-600 hover:underline">Delete</button>
+                                <button type="submit" class="ml-3 font-medium text-red-600 hover:underline">
+                                    {{ $hasHistory ? 'Deactivate' : 'Delete' }}
+                                </button>
                             </form>
                         </td>
                     </tr>

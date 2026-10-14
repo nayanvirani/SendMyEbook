@@ -53,10 +53,10 @@
                 >
             </div>
             <div>
-                <label for="max_downloads_per_month" class="block text-sm font-medium text-gray-700">Max downloads / month</label>
+                <label for="max_deliveries_per_month" class="block text-sm font-medium text-gray-700">Max deliveries / month</label>
                 <input
-                    id="max_downloads_per_month" name="max_downloads_per_month" type="number" min="1"
-                    value="{{ old('max_downloads_per_month', $plan->max_downloads_per_month) }}"
+                    id="max_deliveries_per_month" name="max_deliveries_per_month" type="number" min="1"
+                    value="{{ old('max_deliveries_per_month', $plan->max_deliveries_per_month) }}"
                     placeholder="Leave blank = unlimited"
                     class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600"
                 >

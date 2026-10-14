@@ -10,10 +10,17 @@ use Illuminate\Http\Request;
 
 class PlanController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
+        $showRetired = $request->boolean('retired');
+
         return view('admin.plans.index', [
-            'plans' => Plan::query()->orderBy('sort_order')->get(),
+            'plans' => Plan::query()
+                ->withCount('subscriptions')
+                ->when(! $showRetired, fn ($q) => $q->where('is_active', true))
+                ->orderBy('sort_order')
+                ->get(),
+            'showRetired' => $showRetired,
         ]);
     }
 
@@ -41,8 +48,22 @@ class PlanController extends Controller
         return redirect()->route('admin.plans.index')->with('status', 'Plan updated.');
     }
 
+    /**
+     * A plan with real subscription history can't be hard-deleted — it's
+     * referenced by subscriptions.plan_id, and that history needs to stay
+     * intact for shops that were ever on it. Deactivating instead keeps it
+     * out of the pricing list and new-subscription lookups, which is what
+     * "remove this plan" actually means in practice once it's been used.
+     */
     public function destroy(Plan $plan): RedirectResponse
     {
+        if ($plan->subscriptions()->exists()) {
+            $plan->update(['is_active' => false]);
+
+            return redirect()->route('admin.plans.index')
+                ->with('status', "\"{$plan->name}\" has subscription history, so it can't be deleted — deactivated instead and hidden from the pricing list.");
+        }
+
         $plan->delete();
 
         return redirect()->route('admin.plans.index')->with('status', 'Plan deleted.');
@@ -61,7 +82,7 @@ class PlanController extends Controller
             ],
             'price' => ['required', 'numeric', 'min:0'],
             'max_digital_products' => ['nullable', 'integer', 'min:1'],
-            'max_downloads_per_month' => ['nullable', 'integer', 'min:1'],
+            'max_deliveries_per_month' => ['nullable', 'integer', 'min:1'],
             'features' => ['nullable', 'string'],
             'sort_order' => ['required', 'integer', 'min:0'],
         ]);
