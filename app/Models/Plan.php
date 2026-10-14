@@ -21,8 +21,22 @@ class Plan extends Model
         'max_file_size_mb',
         'trial_days',
         'features',
+        'marketing_bullets',
         'is_active',
         'sort_order',
+    ];
+
+    /**
+     * Every feature slug actually checked somewhere in the app via
+     * hasFeature() — the admin Plans form renders exactly this list as
+     * checkboxes, so a new gate added in code needs a matching entry
+     * here to become admin-editable instead of silently unreachable.
+     */
+    public const KNOWN_FEATURES = [
+        'watermarking' => 'PDF watermarking',
+        'custom_branding' => 'Custom branding (logo/colors)',
+        'download_analytics' => 'Download analytics',
+        'priority_support' => 'Priority support',
     ];
 
     protected function casts(): array
@@ -30,6 +44,7 @@ class Plan extends Model
         return [
             'price' => 'decimal:2',
             'features' => 'array',
+            'marketing_bullets' => 'array',
             'is_active' => 'boolean',
         ];
     }

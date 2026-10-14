@@ -26,7 +26,7 @@
             <label for="handle" class="block text-sm font-medium text-gray-700">Handle</label>
             <input
                 id="handle" name="handle" type="text" value="{{ old('handle', $plan->handle) }}" required
-                placeholder="growth"
+                placeholder="pro"
                 class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600"
             >
             <p class="mt-1 text-xs text-gray-500">Used internally — letters, numbers, dashes and underscores only.</p>
@@ -60,17 +60,59 @@
                     placeholder="Leave blank = unlimited"
                     class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600"
                 >
+                <p class="mt-1 text-xs text-gray-500">One delivery = one order's digital-download email sent, regardless of how many files or downloads follow.</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label for="max_file_size_mb" class="block text-sm font-medium text-gray-700">Max file size (MB)</label>
+                <input
+                    id="max_file_size_mb" name="max_file_size_mb" type="number" min="1"
+                    value="{{ old('max_file_size_mb', $plan->max_file_size_mb) }}"
+                    placeholder="Leave blank = use global default"
+                    class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                >
+                <p class="mt-1 text-xs text-gray-500">250 = 250MB, 10240 = 10GB.</p>
+            </div>
+            <div>
+                <label for="trial_days" class="block text-sm font-medium text-gray-700">Free trial (days)</label>
+                <input
+                    id="trial_days" name="trial_days" type="number" min="1"
+                    value="{{ old('trial_days', $plan->trial_days) }}"
+                    placeholder="Leave blank = no trial"
+                    class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                >
+                <p class="mt-1 text-xs text-gray-500">Display only — the actual trial is set in Shopify's Partner Dashboard Managed Pricing.</p>
             </div>
         </div>
 
         <div>
-            <label for="features" class="block text-sm font-medium text-gray-700">Features (comma separated)</label>
-            <input
-                id="features" name="features" type="text"
-                value="{{ old('features', is_array($plan->features) ? implode(', ', $plan->features) : '') }}"
-                placeholder="email_delivery, priority_support"
+            <span class="block text-sm font-medium text-gray-700">Features</span>
+            <p class="mt-1 text-xs text-gray-500">Turns the matching restriction on/off in the app — not just display text.</p>
+            <div class="mt-2 space-y-2">
+                @php $activeFeatures = old('features', is_array($plan->features) ? $plan->features : []); @endphp
+                @foreach (\App\Models\Plan::KNOWN_FEATURES as $slug => $label)
+                    <label class="flex items-center gap-2 text-sm text-gray-700">
+                        <input
+                            type="checkbox" name="features[]" value="{{ $slug }}"
+                            class="rounded border-gray-300"
+                            {{ in_array($slug, $activeFeatures, true) ? 'checked' : '' }}
+                        >
+                        {{ $label }}
+                    </label>
+                @endforeach
+            </div>
+        </div>
+
+        <div>
+            <label for="marketing_bullets" class="block text-sm font-medium text-gray-700">Marketing bullets (one per line)</label>
+            <textarea
+                id="marketing_bullets" name="marketing_bullets" rows="6"
+                placeholder="Shown on the merchant-facing Billing page, in this order."
                 class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600"
-            >
+            >{{ old('marketing_bullets', is_array($plan->marketing_bullets) ? implode("\n", $plan->marketing_bullets) : '') }}</textarea>
+            <p class="mt-1 text-xs text-gray-500">Free text, shown exactly as written — doesn't need to match the limits/features above.</p>
         </div>
 
         <div>

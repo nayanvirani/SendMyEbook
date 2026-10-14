@@ -83,7 +83,7 @@
 
             <div class="mt-12 grid gap-8 sm:grid-cols-3">
                 @foreach ($plans as $plan)
-                    @php($featured = $plan->handle === 'growth')
+                    @php($featured = (float) $plan->price > 0)
                     <div class="relative rounded-2xl border p-8 {{ $featured ? 'border-emerald-600 shadow-lg' : 'border-gray-200' }}">
                         @if ($featured)
                             <span class="absolute -top-3 left-8 rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold text-white">
@@ -95,21 +95,13 @@
                             <span class="text-4xl font-bold">${{ number_format((float) $plan->price, 0) }}</span>
                             <span class="text-gray-500">/month</span>
                         </p>
+                        @if ($plan->trial_days)
+                            <p class="mt-1 text-xs font-medium text-emerald-700">{{ $plan->trial_days }}-day free trial</p>
+                        @endif
                         <ul class="mt-6 space-y-3 text-sm text-gray-600">
-                            <li class="flex gap-2">
-                                <span>✔</span>
-                                {{ $plan->max_digital_products ? "{$plan->max_digital_products} digital products" : 'Unlimited digital products' }}
-                            </li>
-                            <li class="flex gap-2">
-                                <span>✔</span>
-                                {{ $plan->max_deliveries_per_month ? number_format($plan->max_deliveries_per_month).' deliveries / month' : 'Unlimited deliveries' }}
-                            </li>
-                            <li class="flex gap-2"><span>✔</span> Automatic email delivery</li>
-                            <li class="flex gap-2"><span>✔</span> Download limits &amp; expiration</li>
-                            <li class="flex gap-2"><span>✔</span> Basic analytics</li>
-                            @if (in_array('priority_support', $plan->features ?? []))
-                                <li class="flex gap-2"><span>✔</span> Priority support</li>
-                            @endif
+                            @foreach ($plan->marketing_bullets ?? [] as $bullet)
+                                <li class="flex gap-2"><span>✔</span> {{ $bullet }}</li>
+                            @endforeach
                         </ul>
                         <a href="#"
                            class="mt-8 block rounded-md px-4 py-2.5 text-center text-sm font-semibold {{ $featured ? 'bg-emerald-600 text-white hover:bg-emerald-500' : 'bg-gray-100 text-gray-900 hover:bg-gray-200' }}">

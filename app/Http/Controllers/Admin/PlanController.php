@@ -83,16 +83,22 @@ class PlanController extends Controller
             'price' => ['required', 'numeric', 'min:0'],
             'max_digital_products' => ['nullable', 'integer', 'min:1'],
             'max_deliveries_per_month' => ['nullable', 'integer', 'min:1'],
-            'features' => ['nullable', 'string'],
+            'max_file_size_mb' => ['nullable', 'integer', 'min:1'],
+            'trial_days' => ['nullable', 'integer', 'min:1'],
+            'features' => ['nullable', 'array'],
+            'features.*' => ['string', 'in:'.implode(',', array_keys(Plan::KNOWN_FEATURES))],
+            'marketing_bullets' => ['nullable', 'string'],
             'sort_order' => ['required', 'integer', 'min:0'],
         ]);
 
         // Checkboxes are absent from the request entirely when unchecked, so
         // read it explicitly rather than relying on the validated array.
         $validated['is_active'] = $request->boolean('is_active');
+        $validated['features'] = $validated['features'] ?? [];
 
-        $validated['features'] = array_values(array_filter(
-            array_map('trim', explode(',', (string) $request->input('features', '')))
+        // One bullet per line in the textarea — blank lines dropped.
+        $validated['marketing_bullets'] = array_values(array_filter(
+            array_map('trim', explode("\n", (string) $request->input('marketing_bullets', '')))
         ));
 
         return $validated;

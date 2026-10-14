@@ -3,25 +3,6 @@ import { Page, Card, BlockStack, InlineGrid, InlineStack, Text, Button, Banner, 
 import { CheckIcon } from '@shopify/polaris-icons';
 import { api } from '../api';
 
-const PLAN_BULLETS = {
-    free: [
-        '30 ebook deliveries per month',
-        'Unlimited ebook titles/products listed',
-        'Automatic email delivery after purchase',
-        'Download link on Thank You page',
-        'Upload up to 250MB per file',
-        'Basic file hosting (ePub, PDF, MOBI)',
-    ],
-    pro: [
-        'Unlimited ebook deliveries per month',
-        'Upload up to 10GB per file',
-        'PDF watermarking (protects against sharing/piracy)',
-        'Custom branding (logo, colors on delivery page/emails)',
-        'Download analytics (track opens, downloads, repeat buyers)',
-        'Priority email support',
-    ],
-};
-
 function UsageBar({ label, used, limit }) {
     const pct = limit ? Math.min(100, (used / limit) * 100) : 0;
     const nearLimit = limit && used / limit >= 0.9;
@@ -100,7 +81,7 @@ export default function Billing() {
                 <InlineGrid columns={{ xs: 1, sm: 2 }} gap="400">
                     {(plans || []).map((plan) => {
                         const isCurrent = status?.plan?.handle === plan.handle;
-                        const bullets = PLAN_BULLETS[plan.handle] || [];
+                        const bullets = plan.marketing_bullets || [];
 
                         return (
                             <Box
