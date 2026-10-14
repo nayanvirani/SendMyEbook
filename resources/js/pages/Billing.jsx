@@ -1,7 +1,45 @@
 import React, { useEffect, useState } from 'react';
 import { Page, Card, BlockStack, InlineGrid, InlineStack, Text, Button, Banner, Badge, Box, Icon } from '@shopify/polaris';
-import { CheckIcon } from '@shopify/polaris-icons';
+import { CheckIcon, StarIcon, PackageIcon } from '@shopify/polaris-icons';
 import { api } from '../api';
+
+function PlanIcon({ accent }) {
+    return (
+        <div style={{
+            width: '30px',
+            height: '30px',
+            borderRadius: '8px',
+            background: accent ? '#008060' : '#f1f2f4',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+        }}>
+            <Icon source={accent ? StarIcon : PackageIcon} tone={accent ? 'text-inverse' : 'subdued'} />
+        </div>
+    );
+}
+
+function CheckBullet({ children, accent }) {
+    return (
+        <InlineStack gap="150" blockAlign="start" wrap={false}>
+            <div style={{
+                width: '18px',
+                height: '18px',
+                borderRadius: '999px',
+                background: accent ? '#e3f1ec' : '#f1f2f4',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                marginTop: '1px',
+            }}>
+                <Icon source={CheckIcon} tone={accent ? 'success' : 'subdued'} />
+            </div>
+            <Text as="span">{children}</Text>
+        </InlineStack>
+    );
+}
 
 function UsageBar({ label, used, limit }) {
     const pct = limit ? Math.min(100, (used / limit) * 100) : 0;
@@ -93,7 +131,10 @@ export default function Billing() {
                                 <Card>
                                     <BlockStack gap="300">
                                         <InlineStack align="space-between" blockAlign="center">
-                                            <Text as="h2" variant="headingMd">{plan.name}</Text>
+                                            <InlineStack gap="200" blockAlign="center">
+                                                <PlanIcon accent={isCurrent} />
+                                                <Text as="h2" variant="headingMd">{plan.name}</Text>
+                                            </InlineStack>
                                             {isCurrent && <Badge tone="success">Current plan</Badge>}
                                         </InlineStack>
                                         <InlineStack gap="150" blockAlign="baseline">
@@ -107,10 +148,7 @@ export default function Billing() {
                                         )}
                                         <BlockStack gap="150">
                                             {bullets.map((bullet) => (
-                                                <InlineStack key={bullet} gap="150" blockAlign="start" wrap={false}>
-                                                    <Icon source={CheckIcon} tone="success" />
-                                                    <Text as="span">{bullet}</Text>
-                                                </InlineStack>
+                                                <CheckBullet key={bullet} accent={isCurrent}>{bullet}</CheckBullet>
                                             ))}
                                         </BlockStack>
                                         <Button variant={isCurrent ? 'secondary' : 'primary'} onClick={openPlanPicker}>

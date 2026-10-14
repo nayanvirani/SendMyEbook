@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Page, Card, FormLayout, TextField, Select, Banner, Button, BlockStack, Text, InlineStack, Checkbox, Modal, Badge } from '@shopify/polaris';
+import { Page, Card, FormLayout, TextField, Banner, Button, BlockStack, Text, InlineStack, Checkbox, Modal, Badge } from '@shopify/polaris';
 import { api } from '../api';
 
 export default function Settings() {
@@ -163,7 +163,7 @@ export default function Settings() {
                         <BlockStack gap="100">
                             <Text as="h2" variant="headingMd">Email delivery</Text>
                             <Text as="p" tone="subdued">
-                                Turn delivery emails off entirely, or choose which provider sends them.
+                                Delivery emails are sent automatically through SendMyEbook. Turn them off here if you'd rather customers only use the download link on the Thank You page.
                             </Text>
                         </BlockStack>
 
@@ -171,240 +171,23 @@ export default function Settings() {
                             label="Enable email sending"
                             helpText={
                                 form.mail_enabled
-                                    ? 'Delivery emails will be sent using the provider selected below.'
-                                    : 'No delivery emails will be sent at all, regardless of provider configuration below.'
+                                    ? 'Delivery emails will be sent after each order.'
+                                    : 'No delivery emails will be sent at all — customers will only see the download link on the Thank You page.'
                             }
                             checked={!!form.mail_enabled}
                             onChange={field('mail_enabled')}
                         />
 
-                        <Select
-                            label="Provider"
+                        <TextField
+                            label="From email address (optional)"
+                            type="email"
+                            helpText="Overrides the sender address shown to customers; the email still sends through SendMyEbook's own account."
+                            placeholder="downloads@yourstore.com"
+                            value={form.mail_from_address || ''}
+                            onChange={field('mail_from_address')}
+                            autoComplete="off"
                             disabled={!form.mail_enabled}
-                            options={[
-                                { label: "SendMyEbook's own (default, no setup needed)", value: 'platform_default' },
-                                { label: 'Custom SMTP (Gmail, your own server, ...)', value: 'smtp' },
-                                { label: 'Mailgun', value: 'mailgun' },
-                                { label: 'SendGrid', value: 'sendgrid' },
-                                { label: 'Postmark', value: 'postmark' },
-                                { label: 'Amazon SES', value: 'ses' },
-                                { label: 'Resend', value: 'resend' },
-                            ]}
-                            value={form.mail_provider || 'platform_default'}
-                            onChange={field('mail_provider')}
                         />
-
-                        {(form.mail_provider || 'platform_default') === 'platform_default' && (
-                            <TextField
-                                label="From email address (optional)"
-                                type="email"
-                                helpText="Overrides the sender name shown to customers; the email still sends through SendMyEbook's own account."
-                                placeholder="downloads@yourstore.com"
-                                value={form.mail_from_address || ''}
-                                onChange={field('mail_from_address')}
-                                autoComplete="off"
-                            />
-                        )}
-
-                        {form.mail_provider === 'smtp' && (
-                            <FormLayout>
-                                <TextField
-                                    label="From email address"
-                                    type="email"
-                                    placeholder="downloads@yourstore.com"
-                                    value={form.mail_from_address || ''}
-                                    onChange={field('mail_from_address')}
-                                    autoComplete="off"
-                                />
-                                <FormLayout.Group>
-                                    <TextField
-                                        label="SMTP host"
-                                        placeholder="smtp.example.com"
-                                        value={form.smtp_host || ''}
-                                        onChange={field('smtp_host')}
-                                        autoComplete="off"
-                                    />
-                                    <TextField
-                                        label="Port"
-                                        type="number"
-                                        placeholder="587"
-                                        value={String(form.smtp_port ?? '')}
-                                        onChange={field('smtp_port')}
-                                        autoComplete="off"
-                                    />
-                                </FormLayout.Group>
-                                <FormLayout.Group>
-                                    <TextField
-                                        label="Username"
-                                        value={form.smtp_username || ''}
-                                        onChange={field('smtp_username')}
-                                        autoComplete="off"
-                                    />
-                                    <TextField
-                                        label="Password"
-                                        type="password"
-                                        placeholder={form.has_smtp_password ? 'Saved — leave blank to keep it' : ''}
-                                        value={form.smtp_password || ''}
-                                        onChange={field('smtp_password')}
-                                        autoComplete="off"
-                                    />
-                                </FormLayout.Group>
-                                <Select
-                                    label="Encryption"
-                                    options={[
-                                        { label: 'None', value: '' },
-                                        { label: 'TLS', value: 'tls' },
-                                        { label: 'SSL', value: 'ssl' },
-                                    ]}
-                                    value={form.smtp_encryption || ''}
-                                    onChange={field('smtp_encryption')}
-                                />
-                            </FormLayout>
-                        )}
-
-                        {form.mail_provider === 'mailgun' && (
-                            <FormLayout>
-                                <TextField
-                                    label="From email address"
-                                    type="email"
-                                    helpText="Must be on a domain verified in your Mailgun account."
-                                    placeholder="downloads@yourstore.com"
-                                    value={form.mail_from_address || ''}
-                                    onChange={field('mail_from_address')}
-                                    autoComplete="off"
-                                />
-                                <TextField
-                                    label="Mailgun API key"
-                                    type="password"
-                                    placeholder={form.has_mailgun_api_key ? 'Saved — leave blank to keep it' : 'key-...'}
-                                    value={form.mailgun_api_key || ''}
-                                    onChange={field('mailgun_api_key')}
-                                    autoComplete="off"
-                                />
-                                <FormLayout.Group>
-                                    <TextField
-                                        label="Mailgun domain"
-                                        placeholder="mg.yourstore.com"
-                                        value={form.mailgun_domain || ''}
-                                        onChange={field('mailgun_domain')}
-                                        autoComplete="off"
-                                    />
-                                    <Select
-                                        label="Region"
-                                        options={[
-                                            { label: 'US', value: 'us' },
-                                            { label: 'EU', value: 'eu' },
-                                        ]}
-                                        value={form.mailgun_region || 'us'}
-                                        onChange={field('mailgun_region')}
-                                    />
-                                </FormLayout.Group>
-                            </FormLayout>
-                        )}
-
-                        {form.mail_provider === 'sendgrid' && (
-                            <FormLayout>
-                                <TextField
-                                    label="From email address"
-                                    type="email"
-                                    helpText="Must be on a domain verified in your SendGrid account."
-                                    placeholder="downloads@yourstore.com"
-                                    value={form.mail_from_address || ''}
-                                    onChange={field('mail_from_address')}
-                                    autoComplete="off"
-                                />
-                                <TextField
-                                    label="SendGrid API key"
-                                    type="password"
-                                    placeholder={form.has_sendgrid_api_key ? 'Saved — leave blank to keep it' : 'SG....'}
-                                    value={form.sendgrid_api_key || ''}
-                                    onChange={field('sendgrid_api_key')}
-                                    autoComplete="off"
-                                />
-                            </FormLayout>
-                        )}
-
-                        {form.mail_provider === 'postmark' && (
-                            <FormLayout>
-                                <TextField
-                                    label="From email address"
-                                    type="email"
-                                    helpText="Must be on a signature or domain verified in your Postmark account."
-                                    placeholder="downloads@yourstore.com"
-                                    value={form.mail_from_address || ''}
-                                    onChange={field('mail_from_address')}
-                                    autoComplete="off"
-                                />
-                                <TextField
-                                    label="Postmark server token"
-                                    type="password"
-                                    placeholder={form.has_postmark_api_key ? 'Saved — leave blank to keep it' : ''}
-                                    value={form.postmark_api_key || ''}
-                                    onChange={field('postmark_api_key')}
-                                    autoComplete="off"
-                                />
-                            </FormLayout>
-                        )}
-
-                        {form.mail_provider === 'ses' && (
-                            <FormLayout>
-                                <TextField
-                                    label="From email address"
-                                    type="email"
-                                    helpText="Must be a verified identity in your Amazon SES account."
-                                    placeholder="downloads@yourstore.com"
-                                    value={form.mail_from_address || ''}
-                                    onChange={field('mail_from_address')}
-                                    autoComplete="off"
-                                />
-                                <FormLayout.Group>
-                                    <TextField
-                                        label="Access key ID"
-                                        placeholder={form.has_ses_access_key_id ? 'Saved — leave blank to keep it' : 'AKIA...'}
-                                        value={form.ses_access_key_id || ''}
-                                        onChange={field('ses_access_key_id')}
-                                        autoComplete="off"
-                                    />
-                                    <TextField
-                                        label="Secret access key"
-                                        type="password"
-                                        placeholder={form.has_ses_secret_access_key ? 'Saved — leave blank to keep it' : ''}
-                                        value={form.ses_secret_access_key || ''}
-                                        onChange={field('ses_secret_access_key')}
-                                        autoComplete="off"
-                                    />
-                                </FormLayout.Group>
-                                <TextField
-                                    label="Region"
-                                    placeholder="us-east-1"
-                                    value={form.ses_region || ''}
-                                    onChange={field('ses_region')}
-                                    autoComplete="off"
-                                />
-                            </FormLayout>
-                        )}
-
-                        {form.mail_provider === 'resend' && (
-                            <FormLayout>
-                                <TextField
-                                    label="From email address"
-                                    type="email"
-                                    helpText="Must be on a domain verified in your Resend account."
-                                    placeholder="downloads@yourstore.com"
-                                    value={form.mail_from_address || ''}
-                                    onChange={field('mail_from_address')}
-                                    autoComplete="off"
-                                />
-                                <TextField
-                                    label="Resend API key"
-                                    type="password"
-                                    placeholder={form.has_resend_api_key ? 'Saved — leave blank to keep it' : 're_...'}
-                                    value={form.resend_api_key || ''}
-                                    onChange={field('resend_api_key')}
-                                    autoComplete="off"
-                                />
-                            </FormLayout>
-                        )}
 
                         <InlineStack gap="200" blockAlign="end">
                             <TextField
