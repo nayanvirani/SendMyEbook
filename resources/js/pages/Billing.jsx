@@ -1,6 +1,26 @@
 import React, { useEffect, useState } from 'react';
-import { Page, Card, BlockStack, InlineGrid, InlineStack, Text, Button, Banner, Badge, Box } from '@shopify/polaris';
+import { Page, Card, BlockStack, InlineGrid, InlineStack, Text, Button, Banner, Badge, Box, Icon } from '@shopify/polaris';
+import { CheckIcon } from '@shopify/polaris-icons';
 import { api } from '../api';
+
+const PLAN_BULLETS = {
+    free: [
+        '30 ebook deliveries per month',
+        'Unlimited ebook titles/products listed',
+        'Automatic email delivery after purchase',
+        'Download link on Thank You page',
+        'Upload up to 250MB per file',
+        'Basic file hosting (ePub, PDF, MOBI)',
+    ],
+    pro: [
+        'Unlimited ebook deliveries per month',
+        'Upload up to 10GB per file',
+        'PDF watermarking (protects against sharing/piracy)',
+        'Custom branding (logo, colors on delivery page/emails)',
+        'Download analytics (track opens, downloads, repeat buyers)',
+        'Priority email support',
+    ],
+};
 
 function UsageBar({ label, used, limit }) {
     const pct = limit ? Math.min(100, (used / limit) * 100) : 0;
@@ -71,15 +91,16 @@ export default function Billing() {
                             <Text as="h2" variant="headingMd">Usage</Text>
                             <InlineGrid columns={{ xs: 1, sm: 2 }} gap="400">
                                 <UsageBar label="Digital products" used={usage.digital_products.used} limit={usage.digital_products.limit} />
-                                <UsageBar label="Downloads this month" used={usage.downloads_this_month.used} limit={usage.downloads_this_month.limit} />
+                                <UsageBar label="Email deliveries this month" used={usage.deliveries_this_month.used} limit={usage.deliveries_this_month.limit} />
                             </InlineGrid>
                         </BlockStack>
                     </Card>
                 )}
 
-                <InlineGrid columns={{ xs: 1, sm: 3 }} gap="400">
+                <InlineGrid columns={{ xs: 1, sm: 2 }} gap="400">
                     {(plans || []).map((plan) => {
                         const isCurrent = status?.plan?.handle === plan.handle;
+                        const bullets = PLAN_BULLETS[plan.handle] || [];
 
                         return (
                             <Box
@@ -94,10 +115,23 @@ export default function Billing() {
                                             <Text as="h2" variant="headingMd">{plan.name}</Text>
                                             {isCurrent && <Badge tone="success">Current plan</Badge>}
                                         </InlineStack>
-                                        <Text as="span" variant="heading2xl">${plan.price}<Text as="span" tone="subdued"> /mo</Text></Text>
-                                        <Text as="p" tone="subdued">
-                                            {plan.max_digital_products ? `${plan.max_digital_products} digital products` : 'Unlimited digital products'}
-                                        </Text>
+                                        <InlineStack gap="150" blockAlign="baseline">
+                                            <Text as="span" variant="heading2xl">
+                                                {Number(plan.price) === 0 ? 'Free' : `$${Number(plan.price).toFixed(0)}`}
+                                            </Text>
+                                            {Number(plan.price) > 0 && <Text as="span" tone="subdued">/month</Text>}
+                                        </InlineStack>
+                                        {plan.trial_days && (
+                                            <Badge tone="info">{`${plan.trial_days}-day free trial`}</Badge>
+                                        )}
+                                        <BlockStack gap="150">
+                                            {bullets.map((bullet) => (
+                                                <InlineStack key={bullet} gap="150" blockAlign="start" wrap={false}>
+                                                    <Icon source={CheckIcon} tone="success" />
+                                                    <Text as="span">{bullet}</Text>
+                                                </InlineStack>
+                                            ))}
+                                        </BlockStack>
                                         <Button variant={isCurrent ? 'secondary' : 'primary'} onClick={openPlanPicker}>
                                             {isCurrent ? 'Manage plan' : 'Choose plan'}
                                         </Button>

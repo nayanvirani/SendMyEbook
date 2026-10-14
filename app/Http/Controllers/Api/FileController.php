@@ -23,12 +23,17 @@ class FileController extends Controller
 
     public function store(Request $request, DigitalProduct $digitalProduct): JsonResponse
     {
-        abort_unless($digitalProduct->shop_id === $this->shop($request)->id, 403);
+        $shop = $this->shop($request);
+        abort_unless($digitalProduct->shop_id === $shop->id, 403);
+
+        $maxSizeMb = $shop->currentPlan()?->max_file_size_mb ?? config('filedelivery.max_upload_size_mb');
 
         $data = $request->validate([
             'original_filename' => ['required', 'string', 'max:255'],
             'mime_type' => ['required', 'string', 'in:'.implode(',', config('filedelivery.allowed_mime_types'))],
-            'size_bytes' => ['required', 'integer', 'min:1', 'max:'.(config('filedelivery.max_upload_size_mb') * 1024 * 1024)],
+            'size_bytes' => ['required', 'integer', 'min:1', 'max:'.($maxSizeMb * 1024 * 1024)],
+        ], [
+            'size_bytes.max' => "Files on your plan can be up to {$maxSizeMb}MB. Upgrade to Pro for larger uploads.",
         ]);
 
         $storageKey = $this->storage->generateStorageKey($data['original_filename']);

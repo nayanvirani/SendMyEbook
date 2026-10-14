@@ -15,6 +15,13 @@ class AnalyticsController extends Controller
     {
         $shop = $this->shop($request);
 
+        if (! $shop->hasFeature('download_analytics')) {
+            return response()->json([
+                'error' => 'plan_feature_required',
+                'message' => 'Download analytics is a Pro feature. Upgrade to see it.',
+            ], 402);
+        }
+
         $baseQuery = fn () => Download::query()
             ->whereHas('downloadToken.digitalProduct', fn ($q) => $q->where('shop_id', $shop->id));
 

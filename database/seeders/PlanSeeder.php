@@ -11,36 +11,40 @@ class PlanSeeder extends Seeder
     {
         $plans = [
             [
-                'name' => 'Starter',
-                'handle' => 'starter',
+                'handle' => 'free',
+                'name' => 'Free',
                 'price' => 0,
-                'max_digital_products' => 3,
-                'max_downloads_per_month' => 100,
-                'features' => ['email_delivery', 'basic_analytics'],
+                'max_digital_products' => null,
+                'max_deliveries_per_month' => 30,
+                'max_file_size_mb' => 250,
+                'trial_days' => null,
+                'features' => ['email_delivery', 'thank_you_widget'],
+                'is_active' => true,
                 'sort_order' => 1,
             ],
             [
-                'name' => 'Growth',
-                'handle' => 'growth',
-                'price' => 9.99,
-                'max_digital_products' => 25,
-                'max_downloads_per_month' => 2000,
-                'features' => ['email_delivery', 'basic_analytics', 'priority_support'],
-                'sort_order' => 2,
-            ],
-            [
-                'name' => 'Pro',
                 'handle' => 'pro',
-                'price' => 29.99,
+                'name' => 'Pro',
+                'price' => 19,
                 'max_digital_products' => null,
-                'max_downloads_per_month' => null,
-                'features' => ['email_delivery', 'basic_analytics', 'priority_support', 'unlimited_products'],
-                'sort_order' => 3,
+                'max_deliveries_per_month' => null,
+                'max_file_size_mb' => 10240,
+                'trial_days' => 14,
+                'features' => [
+                    'email_delivery', 'thank_you_widget', 'watermarking',
+                    'custom_branding', 'download_analytics', 'priority_support',
+                ],
+                'is_active' => true,
+                'sort_order' => 2,
             ],
         ];
 
         foreach ($plans as $plan) {
             Plan::query()->updateOrCreate(['handle' => $plan['handle']], $plan);
         }
+
+        // Retired tiers — deactivated rather than deleted, so any
+        // existing subscription history still resolves a real Plan row.
+        Plan::query()->whereIn('handle', ['starter', 'growth'])->update(['is_active' => false]);
     }
 }

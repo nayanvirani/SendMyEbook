@@ -50,6 +50,28 @@ class SendDigitalDeliveryEmailJob implements ShouldQueue
             return;
         }
 
+        $limit = $this->shop->currentPlan()?->max_deliveries_per_month;
+
+        if ($limit !== null) {
+            // Count deliveries already sent/attempted this month, not
+            // including the row just created above for this one.
+            $sentThisMonth = EmailLog::query()
+                ->where('shop_id', $this->shop->id)
+                ->where('id', '!=', $log->id)
+                ->where('created_at', '>=', now()->startOfMonth())
+                ->whereIn('status', ['sent', 'queued'])
+                ->count();
+
+            if ($sentThisMonth >= $limit) {
+                $log->update([
+                    'status' => 'skipped',
+                    'error_message' => "Monthly email delivery limit ({$limit}) reached on the Free plan. Upgrade to Pro for unlimited deliveries.",
+                ]);
+
+                return;
+            }
+        }
+
         try {
             $resolved['mailer']->to($this->order->customer_email)->send(new DigitalDeliveryMail(
                 $this->shop,

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Page, Card, FormLayout, TextField, Select, Banner, Button, BlockStack, Text, InlineStack, Checkbox, Modal } from '@shopify/polaris';
+import { Page, Card, FormLayout, TextField, Select, Banner, Button, BlockStack, Text, InlineStack, Checkbox, Modal, Badge } from '@shopify/polaris';
 import { api } from '../api';
 
 export default function Settings() {
@@ -11,9 +11,11 @@ export default function Settings() {
     const [testResult, setTestResult] = useState(null);
     const [previewHtml, setPreviewHtml] = useState(null);
     const [loadingPreview, setLoadingPreview] = useState(false);
+    const [canBrand, setCanBrand] = useState(true);
 
     useEffect(() => {
         api.get('/settings').then(setForm).catch(() => {});
+        api.get('/subscription-status').then((s) => setCanBrand(!!s.features?.custom_branding)).catch(() => {});
     }, []);
 
     const field = (key) => (value) => setForm((f) => ({ ...f, [key]: value }));
@@ -103,10 +105,14 @@ export default function Settings() {
                 <Card>
                     <BlockStack gap="300">
                         <BlockStack gap="100">
-                            <Text as="h2" variant="headingMd">Branding</Text>
+                            <InlineStack gap="200" blockAlign="center">
+                                <Text as="h2" variant="headingMd">Branding</Text>
+                                {!canBrand && <Badge tone="info">Pro feature</Badge>}
+                            </InlineStack>
                             <Text as="p" tone="subdued">
-                                Shown on the customer download page and in delivery emails instead of the
-                                default plain look.
+                                {canBrand
+                                    ? 'Shown on the customer download page and in delivery emails instead of the default plain look.'
+                                    : 'Upgrade to Pro to customize your logo and brand color on the download page and delivery emails.'}
                             </Text>
                         </BlockStack>
 
@@ -117,6 +123,7 @@ export default function Settings() {
                                 value={form.logo_url || ''}
                                 onChange={field('logo_url')}
                                 autoComplete="off"
+                                disabled={!canBrand}
                             />
                             <TextField
                                 label="Brand color"
@@ -124,6 +131,7 @@ export default function Settings() {
                                 value={form.brand_color || ''}
                                 onChange={field('brand_color')}
                                 autoComplete="off"
+                                disabled={!canBrand}
                                 connectedRight={
                                     <div
                                         style={{

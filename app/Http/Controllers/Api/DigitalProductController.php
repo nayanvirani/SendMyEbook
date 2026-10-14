@@ -37,13 +37,17 @@ class DigitalProductController extends Controller
         $shop = $this->shop($request);
         $data = $this->validated($request);
 
-        $limit = $shop->activeSubscription?->plan?->max_digital_products;
+        $limit = $shop->currentPlan()?->max_digital_products;
 
         if ($limit !== null && $shop->digitalProducts()->count() >= $limit) {
             return response()->json([
                 'error' => 'plan_limit_reached',
                 'message' => "Your plan allows up to {$limit} digital products. Upgrade to add more.",
             ], 402);
+        }
+
+        if ($error = $this->watermarkFeatureError($shop, $data, null)) {
+            return $error;
         }
 
         $product = $shop->digitalProducts()->create($data);
@@ -61,8 +65,13 @@ class DigitalProductController extends Controller
     public function update(Request $request, DigitalProduct $digitalProduct): JsonResponse
     {
         $this->authorizeShop($request, $digitalProduct);
+        $data = $this->validated($request, $digitalProduct);
 
-        $digitalProduct->update($this->validated($request, $digitalProduct));
+        if ($error = $this->watermarkFeatureError($this->shop($request), $data, $digitalProduct)) {
+            return $error;
+        }
+
+        $digitalProduct->update($data);
 
         return response()->json(new DigitalProductResource($digitalProduct->load('files')));
     }
@@ -94,6 +103,28 @@ class DigitalProductController extends Controller
             'requires_license_key' => ['sometimes', 'boolean'],
             'watermark_pdfs' => ['sometimes', 'boolean'],
         ]);
+    }
+
+    /**
+     * Only blocks when watermark_pdfs is actually being turned on (not
+     * merely present, unchanged, in the payload) — a Pro-created product
+     * with it already set stays untouched when the shop edits other
+     * fields after downgrading to Free.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    private function watermarkFeatureError(Shop $shop, array $data, ?DigitalProduct $existing): ?JsonResponse
+    {
+        $turningOn = ($data['watermark_pdfs'] ?? false) && ! ($existing?->watermark_pdfs ?? false);
+
+        if ($turningOn && ! $shop->hasFeature('watermarking')) {
+            return response()->json([
+                'error' => 'plan_feature_required',
+                'message' => 'PDF watermarking is a Pro feature. Upgrade to turn it on.',
+            ], 402);
+        }
+
+        return null;
     }
 
     private function shop(Request $request): Shop

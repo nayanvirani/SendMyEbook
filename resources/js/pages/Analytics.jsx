@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Page, Card, BlockStack, Text, InlineGrid, InlineStack, SkeletonBodyText, Button, Icon, Box, Divider } from '@shopify/polaris';
 import { ArrowDownIcon, DatabaseIcon, ChartVerticalIcon, ReceiptIcon } from '@shopify/polaris-icons';
 import BarChart from '../components/BarChart';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import { formatBytes } from '../formatBytes';
 
@@ -74,12 +75,34 @@ function RankedList({ items, renderLabel, renderValue, emptyText }) {
 }
 
 export default function Analytics() {
+    const navigate = useNavigate();
     const [data, setData] = useState(null);
+    const [locked, setLocked] = useState(false);
     const [period, setPeriod] = useState('day');
 
     useEffect(() => {
-        api.get('/analytics').then(setData).catch(() => {});
+        api.get('/analytics').then(setData).catch((e) => {
+            if (e.status === 402) {
+                setLocked(true);
+            }
+        });
     }, []);
+
+    if (locked) {
+        return (
+            <Page title="Analytics">
+                <Card>
+                    <BlockStack gap="300" inlineAlign="start">
+                        <Text as="h2" variant="headingMd">Download analytics is a Pro feature</Text>
+                        <Text as="p" tone="subdued">
+                            Upgrade to Pro to track downloads over time, top products, and repeat buyers.
+                        </Text>
+                        <Button onClick={() => navigate('/billing')}>Upgrade to Pro</Button>
+                    </BlockStack>
+                </Card>
+            </Page>
+        );
+    }
 
     if (!data) {
         return (

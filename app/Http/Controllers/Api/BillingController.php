@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Download;
+use App\Models\EmailLog;
 use App\Models\Plan;
 use App\Models\Shop;
 use Illuminate\Http\JsonResponse;
@@ -41,17 +41,24 @@ class BillingController extends Controller
             'plan' => $plan?->only(['id', 'name', 'handle']),
             'manage_plan_url' => $this->managePlanUrl($shop),
             'usage' => $this->usage($shop, $plan),
+            'features' => [
+                'watermarking' => (bool) $plan?->hasFeature('watermarking'),
+                'custom_branding' => (bool) $plan?->hasFeature('custom_branding'),
+                'download_analytics' => (bool) $plan?->hasFeature('download_analytics'),
+                'priority_support' => (bool) $plan?->hasFeature('priority_support'),
+            ],
         ]);
     }
 
     /**
-     * @return array{digital_products: array{used: int, limit: ?int}, downloads_this_month: array{used: int, limit: ?int}}
+     * @return array{digital_products: array{used: int, limit: ?int}, deliveries_this_month: array{used: int, limit: ?int}}
      */
     private function usage(Shop $shop, ?Plan $plan): array
     {
-        $downloadsThisMonth = Download::query()
-            ->whereHas('downloadToken.digitalProduct', fn ($q) => $q->where('shop_id', $shop->id))
-            ->where('downloaded_at', '>=', now()->startOfMonth())
+        $deliveriesThisMonth = EmailLog::query()
+            ->where('shop_id', $shop->id)
+            ->where('created_at', '>=', now()->startOfMonth())
+            ->whereIn('status', ['sent', 'queued'])
             ->count();
 
         return [
@@ -59,9 +66,9 @@ class BillingController extends Controller
                 'used' => $shop->digitalProducts()->count(),
                 'limit' => $plan?->max_digital_products,
             ],
-            'downloads_this_month' => [
-                'used' => $downloadsThisMonth,
-                'limit' => $plan?->max_downloads_per_month,
+            'deliveries_this_month' => [
+                'used' => $deliveriesThisMonth,
+                'limit' => $plan?->max_deliveries_per_month,
             ],
         ];
     }

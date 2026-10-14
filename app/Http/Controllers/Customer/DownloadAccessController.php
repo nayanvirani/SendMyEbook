@@ -72,7 +72,14 @@ class DownloadAccessController extends Controller
 
         $downloadToken->recordDownload($file, $request->ip(), $request->userAgent());
 
-        if ($file->mime_type === 'application/pdf' && $downloadToken->digitalProduct->watermark_pdfs) {
+        // Defensive, not just a UI gate: if the shop has since downgraded
+        // off Pro, a product left with watermark_pdfs=true from before
+        // should quietly stop watermarking rather than erroring the
+        // customer's download or still applying a feature they no longer
+        // pay for.
+        $watermarkingAllowed = $downloadToken->order->shop->hasFeature('watermarking');
+
+        if ($file->mime_type === 'application/pdf' && $downloadToken->digitalProduct->watermark_pdfs && $watermarkingAllowed) {
             return $this->downloadWatermarked($file, $downloadToken);
         }
 

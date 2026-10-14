@@ -63,6 +63,17 @@ class SettingController extends Controller
             }
         }
 
+        $existing = $shop->setting;
+        $changingBranding = (array_key_exists('logo_url', $data) && $data['logo_url'] !== $existing?->logo_url)
+            || (array_key_exists('brand_color', $data) && $data['brand_color'] !== $existing?->brand_color);
+
+        if ($changingBranding && ! $shop->hasFeature('custom_branding')) {
+            return response()->json([
+                'error' => 'plan_feature_required',
+                'message' => 'Custom branding (logo and colors) is a Pro feature. Upgrade to set it up.',
+            ], 402);
+        }
+
         $setting = $shop->setting()->updateOrCreate([], $data);
 
         return response()->json($this->present($setting));

@@ -17,7 +17,9 @@ class Plan extends Model
         'handle',
         'price',
         'max_digital_products',
-        'max_downloads_per_month',
+        'max_deliveries_per_month',
+        'max_file_size_mb',
+        'trial_days',
         'features',
         'is_active',
         'sort_order',
@@ -35,5 +37,10 @@ class Plan extends Model
     public function subscriptions(): HasMany
     {
         return $this->hasMany(Subscription::class);
+    }
+
+    public function hasFeature(string $feature): bool
+    {
+        return in_array($feature, $this->features ?? [], true);
     }
 }

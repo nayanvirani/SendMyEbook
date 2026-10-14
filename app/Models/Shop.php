@@ -78,4 +78,14 @@ class Shop extends Model
     {
         return $this->hasOne(Setting::class);
     }
+
+    public function currentPlan(): ?Plan
+    {
+        return $this->activeSubscription?->plan;
+    }
+
+    public function hasFeature(string $feature): bool
+    {
+        return (bool) $this->currentPlan()?->hasFeature($feature);
+    }
 }

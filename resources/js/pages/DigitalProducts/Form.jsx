@@ -53,6 +53,11 @@ export default function DigitalProductForm() {
     const [saving, setSaving] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState(null);
+    const [canWatermark, setCanWatermark] = useState(true);
+
+    useEffect(() => {
+        api.get('/subscription-status').then((s) => setCanWatermark(!!s.features?.watermarking)).catch(() => {});
+    }, []);
 
     useEffect(() => {
         if (!isEditing) return;
@@ -272,10 +277,18 @@ export default function DigitalProductForm() {
                             onChange={field('requires_license_key')}
                         />
                         <Checkbox
-                            label="Watermark PDF files with the customer's order info"
-                            helpText="Only applies to files uploaded as PDF."
+                            label={(
+                                <InlineStack gap="150" blockAlign="center">
+                                    <Text as="span">Watermark PDF files with the customer's order info</Text>
+                                    {!canWatermark && <Badge tone="info">Pro feature</Badge>}
+                                </InlineStack>
+                            )}
+                            helpText={canWatermark
+                                ? 'Only applies to files uploaded as PDF.'
+                                : 'Upgrade to Pro to turn this on.'}
                             checked={form.watermark_pdfs}
                             onChange={field('watermark_pdfs')}
+                            disabled={!canWatermark && !form.watermark_pdfs}
                         />
                     </FormLayout>
                 </Card>
