@@ -3,10 +3,17 @@
 @section('title', $plan->exists ? 'Edit plan' : 'New plan')
 
 @section('content')
+    @php
+        $headerDescription = $plan->exists
+            ? "Editing \"{$plan->name}\" — changes apply to every shop subscribed to it immediately."
+            : null;
+    @endphp
+    <x-admin.page-header :title="$plan->exists ? 'Edit plan' : 'New plan'" :description="$headerDescription" />
+
     <form
         method="POST"
         action="{{ $plan->exists ? route('admin.plans.update', $plan) : route('admin.plans.store') }}"
-        class="max-w-xl space-y-5 rounded-xl border border-gray-200 bg-white p-6"
+        class="max-w-xl space-y-5 rounded-2xl border border-gray-200 bg-white p-6"
     >
         @csrf
         @if ($plan->exists)

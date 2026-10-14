@@ -6,11 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     @vite(['resources/css/app.css'])
 </head>
-<body class="flex min-h-screen items-center justify-center bg-gray-50 text-gray-900 antialiased">
-    <div class="w-full max-w-sm rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
-        <div class="mb-6 flex items-center gap-2 text-lg font-semibold">
-            <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-600 text-white">📩</span>
-            SendMyEbook admin
+<body class="flex min-h-screen items-center justify-center bg-gradient-to-b from-gray-50 to-emerald-50/40 text-gray-900 antialiased">
+    <div class="w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+        <div class="mb-6 flex items-center gap-2.5">
+            <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-sm">📩</span>
+            <div>
+                <p class="text-sm font-semibold leading-tight">SendMyEbook</p>
+                <p class="text-xs leading-tight text-gray-400">Operator console</p>
+            </div>
         </div>
 
         @if ($errors->any())

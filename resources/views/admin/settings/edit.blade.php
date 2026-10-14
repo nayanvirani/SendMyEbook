@@ -3,6 +3,8 @@
 @section('title', 'Email Settings')
 
 @section('content')
+    <x-admin.page-header title="Email Settings" description="The platform's own default sender — what every shop gets until it configures its own provider." />
+
     <div class="max-w-2xl space-y-6">
         <p class="text-sm text-gray-600">
             This is the sender used as <strong>every shop's "SendMyEbook's own"</strong> email option
@@ -16,7 +18,7 @@
         <form
             method="POST"
             action="{{ route('admin.settings.update') }}"
-            class="space-y-5 rounded-xl border border-gray-200 bg-white p-6"
+            class="space-y-5 rounded-2xl border border-gray-200 bg-white p-6"
         >
             @csrf
             @method('PUT')
@@ -166,7 +168,7 @@
         <form
             method="POST"
             action="{{ route('admin.settings.test-email') }}"
-            class="flex items-end gap-3 rounded-xl border border-gray-200 bg-white p-6"
+            class="flex items-end gap-3 rounded-2xl border border-gray-200 bg-white p-6"
         >
             @csrf
             <div class="flex-1">

@@ -71,4 +71,27 @@ return [
     */
 
     'billing_test_mode' => (bool) env('SHOPIFY_BILLING_TEST_MODE', true),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Partner API (admin Revenue page)
+    |--------------------------------------------------------------------------
+    |
+    | An organization-level credential (Partner Dashboard → Settings →
+    | Partner API clients) — different from api_key/api_secret above,
+    | which are per-app. This is the only way to see real historical
+    | charge/payout data; the per-shop Admin API only ever shows a
+    | shop's current subscription snapshot. Shared across every app in
+    | the Partner org, so PartnerApiClient filters results down to this
+    | app's own installed shops.
+    |
+    */
+
+    'partner_api_token' => env('PARTNER_API_TOKEN'),
+    'partner_org_id' => env('PARTNER_ORG_ID'),
+    'partner_api_version' => env('PARTNER_API_VERSION', '2026-07'),
+
+    // Developer revenue-share cut, computed off gross (pre-Shopify-fee)
+    // revenue on the admin Revenue page.
+    'revenue_share_pct' => (float) env('REVENUE_SHARE_PCT', 0.15),
 ];
